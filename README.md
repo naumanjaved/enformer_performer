@@ -1,6 +1,6 @@
 # genformer_public
 
-see gs://genformer_data/data for basenji barnyard data reprocessed to sequence length 196k, 128 bp resolution. see targets.txt file in human and mouse folders respectiely for metadata for the datasets in the TFRs
+see *gs://genformer_data/data* for basenji barnyard data reprocessed to sequence length 196k, 128 bp resolution. see targets.txt file in human and mouse folders respectiely for metadata for the datasets in the TFRs
 
 data from:
 
