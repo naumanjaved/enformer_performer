@@ -749,6 +749,14 @@ def make_plots(y_trues,
     
     data = np.vstack([true_zscore[idx],
                       pred_zscore[idx]])
+    
+    min_true = min(true_zscore)
+    max_true = max(true_zscore)
+    
+    min_pred = min(pred_zscore)
+    max_pred = max(pred_zscore)
+    
+    
     try:
         kernel = stats.gaussian_kde(data)(data)
         sns.scatterplot(
@@ -756,8 +764,8 @@ def make_plots(y_trues,
             y=pred_zscore[idx],
             c=kernel,
             cmap="viridis")
-        ax_overall.set_xlim(min(true_zscore[idx]), max(true_zscore[idx]))
-        ax_overall.set_ylim(min(true_zscore[idx]), max(true_zscore[idx]))
+        ax_overall.set_xlim(min_true,max_true)
+        ax_overall.set_ylim(min_pred,max_pred)
         plt.xlabel("log-true zscore")
         plt.ylabel("log-pred zscore")
         plt.title("overall gene corr")
@@ -766,8 +774,8 @@ def make_plots(y_trues,
             x=true_zscore[idx],
             y=pred_zscore[idx],
             cmap="viridis")
-        ax_overall.set_xlim(min(true_zscore[idx]), max(true_zscore[idx]))
-        ax_overall.set_ylim(min(true_zscore[idx]), max(true_zscore[idx]))
+        ax_overall.set_xlim(min_true,max_true)
+        ax_overall.set_ylim(min_pred,max_pred)
         plt.xlabel("log-true zscore")
         plt.ylabel("log-pred zscore")
         plt.title("overall gene corr")
