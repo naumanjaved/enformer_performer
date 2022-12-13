@@ -719,9 +719,7 @@ def make_plots(y_trues,
     results_df['gene_encoding'] =gene_map
     results_df['cell_type_encoding'] = cell_types
     
-    #results_df['true_zscore'] = df.groupby('cell_type_encoding')['true'].apply(lambda x: (x - x.mean())/x.std())
     results_df['true_zscore']=results_df.groupby(['cell_type_encoding']).true.transform(lambda x : zscore(x))
-    #results_df['pred_zscore'] = df.groupby('cell_type_encoding')['pred'].apply(lambda x: (x - x.mean())/x.std())
     results_df['pred_zscore']=results_df.groupby(['cell_type_encoding']).pred.transform(lambda x : zscore(x))
     
     true_zscore=results_df[['true_zscore']].to_numpy()[:,0]
@@ -929,7 +927,8 @@ def parse_args(parser):
                         dest='decay_frac',
                         default="1.0",
                         help='decay_frac')
-    parser.add_argument('--warmup_frac', dest = 'warmup_frac',
+    parser.add_argument('--warmup_frac', 
+                        dest = 'warmup_frac',
                         default=0.0,
                         type=float, help='warmup_frac')
     parser.add_argument('--input_length',
@@ -957,7 +956,7 @@ def parse_args(parser):
                         help='heads_channels')
     parser.add_argument('--epsilon',
                         dest='epsilon',
-                        default=1.0e-10,
+                        default=1.0e-8,
                         type=float,
                         help= 'epsilon')
     parser.add_argument('--gradient_clip',
