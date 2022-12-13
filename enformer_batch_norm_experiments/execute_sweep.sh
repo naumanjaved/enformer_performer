@@ -17,6 +17,8 @@ python3 train_model_batchnorm_experiments.py \
             --model_save_basename="enformer_batchnorms" \
             --lr_base1="1.0e-04" \
             --lr_base2="1.0e-04" \
+            --weight_decay_frac="0.0" \
+            --decay_frac="1.0" \
             --epsilon=1.0e-10 \
             --num_parallel=8 \
             --savefreq=8 \

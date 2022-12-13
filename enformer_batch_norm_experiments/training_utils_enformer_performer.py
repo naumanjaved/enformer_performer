@@ -927,7 +927,7 @@ def parse_args(parser):
                         help='lr_base2')
     parser.add_argument('--decay_frac',
                         dest='decay_frac',
-                        default="0.0",
+                        default="1.0",
                         help='decay_frac')
     parser.add_argument('--warmup_frac', dest = 'warmup_frac',
                         default=0.0,
