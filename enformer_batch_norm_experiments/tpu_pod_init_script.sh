@@ -13,6 +13,7 @@ sudo pip3 install wandb==0.13.1
 sudo pip3 install plotly==5.8.2
 sudo pip3 install scikit-learn==1.0
 sudo pip3 install tensorboard-plugin-profile==2.4.0
+sudo pip3 install numpy --upgrade
 
 export TPU_NAME=pod
 export ZONE=us-east1-d 
