@@ -968,7 +968,7 @@ def parse_args(parser):
     parser.add_argument('--weight_decay_frac',
                         dest='weight_decay_frac',
                         type=str,
-                        default="0.1",
+                        default="0.0",
                         help= 'weight_decay_frac')
     parser.add_argument('--dropout_rate',
                         dest='dropout_rate',
