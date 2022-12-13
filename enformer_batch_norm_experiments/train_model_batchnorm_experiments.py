@@ -342,7 +342,7 @@ def main():
                                          decay_schedule_fn=scheduler1wd)
             
             optimizer1 = tfa.optimizers.AdamW(learning_rate=scheduler1,
-                                              weight_decay=scheduler1wd)
+                                              weight_decay=scheduler1wd,epsilon=1e-08)
             #####
             scheduler2= tf.keras.optimizers.schedules.CosineDecay(
                 initial_learning_rate=wandb.config.lr_base2,
@@ -358,7 +358,7 @@ def main():
                                          decay_schedule_fn=scheduler2wd)
             
             optimizer2 = tfa.optimizers.AdamW(learning_rate=scheduler2,
-                                              weight_decay=scheduler2wd)
+                                              weight_decay=scheduler2wd,epsilon=1e-08)
             #####
             optimizers_in = optimizer1,optimizer2
             
