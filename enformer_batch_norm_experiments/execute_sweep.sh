@@ -16,9 +16,7 @@ python3 train_model_batchnorm_experiments.py \
             --model_save_dir="gs://picard-testing-176520/enformer_batchnorms/models" \
             --model_save_basename="enformer_batchnorms" \
             --lr_base1="1.0e-06" \
-            --lr_base2="5.0e-04" \
-            --weight_decay_frac="0.0" \
-            --decay_frac="1.0" \
+            --lr_base2="1.0e-04" \
             --epsilon=1.0e-8 \
             --num_parallel=8 \
             --savefreq=8 \

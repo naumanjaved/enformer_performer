@@ -923,10 +923,6 @@ def parse_args(parser):
                         dest='lr_base2',
                         default="1.0e-03",
                         help='lr_base2')
-    parser.add_argument('--decay_frac',
-                        dest='decay_frac',
-                        default="1.0",
-                        help='decay_frac')
     parser.add_argument('--warmup_frac', 
                         dest = 'warmup_frac',
                         default=0.0,
@@ -964,11 +960,6 @@ def parse_args(parser):
                         type=str,
                         default="0.2",
                         help= 'gradient_clip')
-    parser.add_argument('--weight_decay_frac',
-                        dest='weight_decay_frac',
-                        type=str,
-                        default="0.0",
-                        help= 'weight_decay_frac')
     parser.add_argument('--dropout_rate',
                         dest='dropout_rate',
                         default="0.40",

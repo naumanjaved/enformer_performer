@@ -110,12 +110,6 @@ def main():
                 'gradient_clip': {
                     'values': [float(x) for x in args.gradient_clip.split(',')]
                 },
-                'decay_frac': {
-                    'values': [float(x) for x in args.decay_frac.split(',')]
-                },
-                'weight_decay_frac': {
-                    'values': [float(x) for x in args.weight_decay_frac.split(',')]
-                },
                 'num_transformer_layers':{
                     'values': [int(x) for x in args.num_transformer_layers.split(',')]
                 },
@@ -339,7 +333,7 @@ def main():
             #####
             scheduler2= tf.keras.optimizers.schedules.CosineDecay(
                 initial_learning_rate=wandb.config.lr_base2,
-                decay_steps=wandb.config.total_step*wandb.config.num_epochs, alpha=1.0)
+                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=1.0)
             scheduler2=optimizers.WarmUp(initial_learning_rate=wandb.config.lr_base2,
                                          warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
                                          decay_schedule_fn=scheduler2)
