@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 python3 train_model_batchnorm_experiments.py \
-            --tpu_name="pod1" \
+            --tpu_name="pod" \
             --tpu_zone="us-east1-d" \
             --wandb_project="enformer_performer_batchnorm" \
             --wandb_user="njaved" \
