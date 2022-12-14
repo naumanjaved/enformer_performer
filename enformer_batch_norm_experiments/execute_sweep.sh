@@ -9,7 +9,7 @@ python3 train_model_batchnorm_experiments.py \
             --gcs_project="picard-testing-176520" \
             --gcs_path="gs://genformer_data/data_noTF" \
             --gcs_path_TSS="gs://genformer_data/data_noTF/human/genecentered_tss" \
-            --num_epochs=100 \
+            --num_epochs=40 \
             --warmup_frac=0.146 \
             --patience=25\
             --min_delta=0.00001 \
@@ -20,7 +20,7 @@ python3 train_model_batchnorm_experiments.py \
             --gradient_clip="1.0" \
             --epsilon=1.0e-8 \
             --num_parallel=8 \
-            --savefreq=20 \
+            --savefreq=45 \
             --val_examples_TSS=1646 \
             --load_init="False" \
             --freeze_conv_layers="False" \

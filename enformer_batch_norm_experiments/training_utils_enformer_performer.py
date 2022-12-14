@@ -780,15 +780,15 @@ def make_plots(y_trues,
 
     fig_gene_spec,ax_gene_spec=plt.subplots(figsize=(6,6))
     sns.histplot(x=np.asarray(gene_specific_corrs), bins=50)
-    plt.xlabel("single gene cross cell-type correlations")
+    plt.xlabel("log-log pearsons")
     plt.ylabel("count")
-    plt.title("log-log z score pearsons")
+    plt.title("single gene cross cell-type correlations")
 
     fig_cell_spec,ax_cell_spec=plt.subplots(figsize=(6,6))
     sns.histplot(x=np.asarray(cell_specific_corrs), bins=50)
-    plt.xlabel("single cell-type cross gene correlations")
+    plt.xlabel("log-log pearsons")
     plt.ylabel("count")
-    plt.title("log-log z score pearsons")
+    plt.title("single cell-type cross gene correlations")
         
         ### by coefficient variation breakdown
     figures = fig_cell_spec, fig_gene_spec, fig_overall
