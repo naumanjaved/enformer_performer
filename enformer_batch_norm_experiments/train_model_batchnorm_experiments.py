@@ -372,7 +372,6 @@ def main():
                 if epoch_i == 1:
                     print('building model')
                     build_step(val_data_it_dict['human'])
-                    print('built model')
                     total_params = 0
                     for k in model.trainable_variables:
                         var = k.values[0]
@@ -399,6 +398,7 @@ def main():
                     wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
                               step=epoch_i)
                     pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
+                    
                     wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
                                organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:674]),
                                organism+'_CHIP_pearsons': np.nanmean(pearsonsR[674:2058]),
@@ -419,13 +419,15 @@ def main():
                 
                 print('computing TSS quant metrics')
                 
-                y_trues = np.log(1.0+metric_dict['hg_corr_stats'].result()['y_trues'].numpy())
-                y_preds = np.log(1.0+metric_dict['hg_corr_stats'].result()['y_preds'].numpy())
+                y_trues = np.log2(1.0+metric_dict['hg_corr_stats'].result()['y_trues'].numpy())
+                y_preds = np.log2(1.0+metric_dict['hg_corr_stats'].result()['y_preds'].numpy())
                 cell_types = metric_dict['hg_corr_stats'].result()['cell_types'].numpy()
                 gene_map = metric_dict['hg_corr_stats'].result()['gene_map'].numpy()
 
-                figures,corrs_overall= training_utils.make_plots(y_trues,y_preds,
-                                                                 cell_types,gene_map)
+                figures,corrs_overall= training_utils.make_plots(y_trues,
+                                                                 y_preds,
+                                                                 cell_types,
+                                                                 gene_map)
 
                 print('returned TSS centered correlations and figures')
                 fig_cell_spec, fig_gene_spec, fig_overall=figures 
@@ -481,8 +483,8 @@ def main():
                                                         saved_model_basename=base_name)
                     #plt.close('all')
                     print('patience counter at: ' + str(patience_counter))
-                    for key, item in metric_dict.items():
-                        item.reset_state()
+                for key, item in metric_dict.items():
+                    item.reset_state()
                 if stop_criteria:
                     print('early stopping at: epoch ' + str(epoch_i))
                     break

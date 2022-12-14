@@ -280,7 +280,7 @@ def return_train_val_functions(model,
     
     train_func_dict = {}
     val_func_dict = {}
-    
+    metric_dict["hg_corr_stats"] = metrics.correlation_stats_gene_centered(name='hg_corr_stats')
     for organism, steps_tuple in organisms_dict.items():
 
         metric_dict[organism + "_tr"] = tf.keras.metrics.Mean(organism + "_tr_loss",
@@ -292,7 +292,7 @@ def return_train_val_functions(model,
 
         metric_dict[organism + '_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
         
-        metric_dict["hg_corr_stats"] = metrics.correlation_stats_gene_centered(name='hg_corr_stats')
+        
         
         train_steps, val_steps = steps_tuple
         
@@ -320,7 +320,7 @@ def return_train_val_functions(model,
                     output = model(sequence,
                                    training=True)[organism]
                     output = tf.cast(output,dtype=tf.float32)
-                    loss = tf.math.reduce_sum(loss_fn(target,output)) * (1. / global_batch_size)
+                    loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
                     
                     
                     
@@ -349,7 +349,7 @@ def return_train_val_functions(model,
                 output = model(sequence,
                                training=False)[organism]
                 output = tf.cast(output,dtype=tf.float32)
-                loss = tf.math.reduce_sum(loss_fn(target,output)) * (1. / global_batch_size)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
 
                 metric_dict[organism + "_val"].update_state(loss)
                 metric_dict[organism + '_pearsonsR'].update_state(target, output)
@@ -727,12 +727,12 @@ def make_plots(y_trues,
     pred_zscore=results_df[['pred_zscore']].to_numpy()[:,0]
 
     try: 
-        cell_specific_corrs=results_df.groupby('cell_type_encoding')[['true_zscore','pred_zscore']].corr(method='pearson').unstack().iloc[:,1].tolist()
+        cell_specific_corrs=results_df.groupby('cell_type_encoding')[['true','pred']].corr(method='pearson').unstack().iloc[:,1].tolist()
     except np.linalg.LinAlgError as err:
         cell_specific_corrs = [0.0] * len(np.unique(cell_types))
 
     try: 
-        gene_specific_corrs=results_df.groupby('gene_encoding')[['true_zscore','pred_zscore']].corr(method='pearson').unstack().iloc[:,1].tolist()
+        gene_specific_corrs=results_df.groupby('gene_encoding')[['true','pred']].corr(method='pearson').unstack().iloc[:,1].tolist()
     except np.linalg.LinAlgError as err:
         gene_specific_corrs = [0.0] * len(np.unique(gene_map))
     
@@ -743,39 +743,39 @@ def make_plots(y_trues,
     fig_overall,ax_overall=plt.subplots(figsize=(6,6))
     
     ## scatter plot for 50k points max
-    idx = np.random.choice(np.arange(len(true_zscore)), 50000, replace=False)
+    idx = np.random.choice(np.arange(len(y_trues)), 20000, replace=False)
     
-    data = np.vstack([true_zscore[idx],
-                      pred_zscore[idx]])
+    data = np.vstack([y_trues[idx],
+                      y_preds[idx]])
     
-    min_true = min(true_zscore)
-    max_true = max(true_zscore)
+    min_true = min(y_trues)
+    max_true = max(y_trues)
     
-    min_pred = min(pred_zscore)
-    max_pred = max(pred_zscore)
+    min_pred = min(y_preds)
+    max_pred = max(y_preds)
     
     
     try:
         kernel = stats.gaussian_kde(data)(data)
         sns.scatterplot(
-            x=true_zscore[idx],
-            y=pred_zscore[idx],
+            x=y_trues[idx],
+            y=y_preds[idx],
             c=kernel,
             cmap="viridis")
         ax_overall.set_xlim(min_true,max_true)
         ax_overall.set_ylim(min_pred,max_pred)
-        plt.xlabel("log-true zscore")
-        plt.ylabel("log-pred zscore")
+        plt.xlabel("log-true")
+        plt.ylabel("log-pred")
         plt.title("overall gene corr")
     except np.linalg.LinAlgError as err:
         sns.scatterplot(
-            x=true_zscore[idx],
-            y=pred_zscore[idx],
+            x=y_trues[idx],
+            y=y_preds[idx],
             cmap="viridis")
         ax_overall.set_xlim(min_true,max_true)
         ax_overall.set_ylim(min_pred,max_pred)
-        plt.xlabel("log-true zscore")
-        plt.ylabel("log-pred zscore")
+        plt.xlabel("log-true")
+        plt.ylabel("log-pred")
         plt.title("overall gene corr")
 
     fig_gene_spec,ax_gene_spec=plt.subplots(figsize=(6,6))
@@ -940,7 +940,7 @@ def parse_args(parser):
     parser.add_argument('--num_transformer_layers',
                         dest='num_transformer_layers',
                         type=str,
-                        default="11",
+                        default="6",
                         help= 'num_transformer_layers')
     parser.add_argument('--filter_list',
                         dest='filter_list',
@@ -970,7 +970,7 @@ def parse_args(parser):
                         help= 'attention_dropout_rate')
     parser.add_argument('--num_heads',
                         dest='num_heads',
-                        default="8",
+                        default="4",
                         help= 'num_heads')
     parser.add_argument('--nb_random_features',
                         dest='nb_random_features',
@@ -980,7 +980,7 @@ def parse_args(parser):
     parser.add_argument('--kernel_transformation',
                         dest='kernel_transformation',
                         type=str,
-                        default="softmax_kernel_transformation",
+                        default="relu_kernel_transformation",
                         help= 'kernel_transformation')
     parser.add_argument('--savefreq',
                         dest='savefreq',
