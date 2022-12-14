@@ -24,7 +24,7 @@ python3 train_model_batchnorm_experiments.py \
             --val_examples_TSS=1646 \
             --load_init="False" \
             --freeze_conv_layers="False" \
-            --enformer_checkpoint_path="/home/jupyter/dev/BE_CD69_paper_2022/enformer_fine_tuning/checkpoint/sonnet_weights" \
+            --enformer_checkpoint_path="sonnet_weights" \
             --num_examples_dict="human:34021,2213" \
             --model_type='enformer_performer' \
             --num_transformer_layers=4 \
