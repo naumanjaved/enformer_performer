@@ -593,7 +593,7 @@ def return_dataset(gcs_path,
                                                     "tfrecords",
                                                     wc)))
     
-
+    random.shuffle(list_files)
     files = tf.data.Dataset.list_files(list_files)
     
     dataset = tf.data.TFRecordDataset(files,
@@ -701,8 +701,8 @@ def return_distributed_iterators(gcs_paths_dict,
                                      num_epoch)
         
     
-        val_dist_TSS= strategy.experimental_distribute_dataset(val_data_TSS)
-        val_data_TSS_it = iter(val_dist_TSS)
+        val_dist_TSS_dist= strategy.experimental_distribute_dataset(val_data_TSS)
+        val_data_TSS_it = iter(val_dist_TSS_dist)
 
 
     return train_iters,valid_iters,val_data_TSS_it

@@ -15,14 +15,14 @@ python3 train_model_batchnorm_experiments.py \
             --min_delta=0.00001 \
             --model_save_dir="gs://picard-testing-176520/enformer_batchnorms/models" \
             --model_save_basename="enformer_batchnorms" \
-            --lr_base1="5.0e-04" \
-            --lr_base2="5.0e-04" \
+            --lr_base1="1.0e-06" \
+            --lr_base2="1.0e-04" \
             --gradient_clip="1.0" \
             --epsilon=1.0e-8 \
             --num_parallel=8 \
             --savefreq=45 \
             --val_examples_TSS=1646 \
-            --load_init="False" \
+            --load_init="True" \
             --freeze_conv_layers="False" \
             --enformer_checkpoint_path="sonnet_weights" \
             --num_examples_dict="human:34021,2213" \
