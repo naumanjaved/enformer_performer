@@ -70,6 +70,7 @@ def parse_dict_input_tuple(input_str,global_batch_size):
     return out_dict
     
 
+
  ## reformat 
 # ===========================================================================#
 
@@ -143,6 +144,9 @@ def main():
                 'norm': {
                     'values':[parse_bool_str(x) for x in args.norm.split(',')]
                 },
+                'stable_variant': {
+                    'values':[parse_bool_str(x) for x in args.stable_variant.split(',')]
+                },
                 'filter_list': {
                     'values': [[int(x) for x in args.filter_list.split(',')]]
                 },
@@ -167,6 +171,8 @@ def main():
         strategy = training_utils.tf_tpu_initialize(args.tpu_name,args.tpu_zone)
         mixed_precision.set_global_policy('mixed_bfloat16')
         
+        
+        g = tf.random.Generator.from_non_deterministic_state()
         ## rest must be w/in strategy scope
         with strategy.scope():
             config_defaults = {
@@ -235,7 +241,6 @@ def main():
             
             organism_dict = parse_dict_input_tuple(args.num_examples_dict,
                                                    GLOBAL_BATCH_SIZE)
-            print(organism_dict)
 
             wandb.config.update({"total_steps" : (organism_dict['human'][0]) // GLOBAL_BATCH_SIZE},
                                 allow_val_change=True)
@@ -247,17 +252,17 @@ def main():
             for key,val in wandb.config.heads_channels.items():
                 iterators[key]=(wandb.config.gcs_path,val)
 
-            tr_data_it_dict,val_data_it_dict,val_data_TSS_it = \
+            tr_data_it_dict,val_data_it_dict,val_data_TSS_it= \
                     training_utils.return_distributed_iterators(iterators,
                                                                 wandb.config.gcs_path_TSS,
                                                                 GLOBAL_BATCH_SIZE,
                                                                 wandb.config.input_length,
                                                                 wandb.config.max_shift,
-                                                                wandb.config.output_length,
                                                                 args.num_parallel,
                                                                 args.num_epochs,
                                                                 strategy,
-                                                                options)
+                                                                options,
+                                                                g)
 
 
             print('created dataset iterators')
@@ -277,6 +282,7 @@ def main():
                                                               hidden_size=wandb.config.filter_list[-1],
                                                               numerical_stabilizer=0.001,
                                                               inits=inits,
+                                                              stable_variant=wandb.config.stable_variant,
                                                               dropout_rate=wandb.config.dropout_rate,
                                                               attention_dropout_rate=wandb.config.attention_dropout_rate,
                                                               rel_pos_bins=wandb.config.output_length,
@@ -346,9 +352,11 @@ def main():
 
             metric_dict = {}
 
-            train_step_dict, val_step_dict, val_step_TSS, build_step,metric_dict = \
+            dist_train_step,val_step_h,val_step_m,val_step_TSS,build_step, metric_dict = \
                             training_utils.return_train_val_functions(model,
-                                                                      organism_dict,
+                                                                      organism_dict['human'][0],
+                                                                      organism_dict['human'][1],
+                                                                      organism_dict['mouse'][1],
                                                                       wandb.config.val_steps_TSS,
                                                                       optimizers_in,
                                                                       strategy,
@@ -380,10 +388,16 @@ def main():
                 
                 print('starting epoch_', str(epoch_i))
                 start = time.time()
-                for organism in organism_dict.keys():
-                    train_step_dict[organism](tr_data_it_dict[organism])
-                    wandb.log({organism + '_train_loss': metric_dict[organism + '_tr'].result().numpy()},
-                              step=epoch_i)
+                
+                dist_train_step(tr_data_it_dict['human'],
+                                tr_data_it_dict['mouse'])
+                #for organism in organism_dict.keys():
+                    
+                    #train_step_dict[organism](tr_data_it_dict[organism])
+                wandb.log({'human_train_loss': metric_dict['human_tr'].result().numpy()},
+                          step=epoch_i)
+                wandb.log({'mouse_train_loss': metric_dict['mouse_tr'].result().numpy()},
+                          step=epoch_i)
 
                 end = time.time()
                 duration = (end - start) / 60.
@@ -393,23 +407,25 @@ def main():
                 print('training duration(mins): ' + str(duration))
                 
                 start = time.time()
+                val_step_h(val_data_it_dict['human'])
+                val_step_m(val_data_it_dict['mouse'])
+                
                 for organism in organism_dict.keys():
-                    val_step_dict[organism](val_data_it_dict[organism])
                     wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
                               step=epoch_i)
                     pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
                     
                     wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
-                               organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:674]),
-                               organism+'_CHIP_pearsons': np.nanmean(pearsonsR[674:2058]),
-                               organism+'_CAGE_pearsons': np.nanmean(pearsonsR[2058:])},
+                               organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:684]),
+                               organism+'_CHIP_pearsons': np.nanmean(pearsonsR[684:4675]),
+                               organism+'_CAGE_pearsons': np.nanmean(pearsonsR[4675:])},
                               step=epoch_i)
 
                     R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
                     wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
-                               organism+'_DNASE_R2': np.nanmean(R2[:674]),
-                               organism+'_CHIP_R2': np.nanmean(R2[674:2058]),
-                               organism+'_CAGE_R2': np.nanmean(R2[2058:])},
+                               organism+'_DNASE_R2': np.nanmean(R2[:684]),
+                               organism+'_CHIP_R2': np.nanmean(R2[684:4675]),
+                               organism+'_CAGE_R2': np.nanmean(R2[4675:])},
                               step=epoch_i)
                 
                 print('human_val_loss: ' + str(metric_dict['human_val'].result().numpy()))
@@ -419,8 +435,8 @@ def main():
                 
                 print('computing TSS quant metrics')
                 
-                y_trues = np.log2(1.0+metric_dict['hg_corr_stats'].result()['y_trues'].numpy())
-                y_preds = np.log2(1.0+metric_dict['hg_corr_stats'].result()['y_preds'].numpy())
+                y_trues = metric_dict['hg_corr_stats'].result()['y_trues'].numpy()
+                y_preds = metric_dict['hg_corr_stats'].result()['y_preds'].numpy()
                 cell_types = metric_dict['hg_corr_stats'].result()['cell_types'].numpy()
                 gene_map = metric_dict['hg_corr_stats'].result()['gene_map'].numpy()
 
@@ -435,7 +451,6 @@ def main():
                 cell_spec_mean_corrs, \
                     gene_spec_mean_corrs = corrs_overall
                 
-            
                 val_pearsons.append(cell_spec_mean_corrs)
                 
                 print('hg_RNA_pearson: ' + str(cell_spec_mean_corrs))

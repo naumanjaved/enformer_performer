@@ -39,6 +39,7 @@ class enformer_performer(tf.keras.Model):
                  use_rot_emb=True,
                  load_init=False,
                  freeze_conv_layers=False,
+                 stable_variant=True,
                  inits=None,
                  kernel_transformation="softmax_kernel_transformation",
                  normalize=True,
@@ -76,7 +77,6 @@ class enformer_performer(tf.keras.Model):
         self.inits=inits
         self.load_init=load_init
         self.freeze_conv_layers=freeze_conv_layers
-        self.inits=inits
         
         if self.load_init:
             self.filter_list= [768,896,1024,1152,1280,1536]
@@ -176,25 +176,44 @@ class enformer_performer(tf.keras.Model):
 
         self.sin_pe = abs_sin_PE(name='sin_pe',
                                   **kwargs)
-        
-        self.performer = Performer_Encoder(num_layers=self.num_transformer_layers,
-                                           num_heads=self.num_heads,
-                                           dim = self.dim,
-                                           d_model=self.d_model,
-                                           norm=self.norm,
-                                           max_seq_length=self.max_seq_length,
-                                           nb_random_features=self.nb_random_features,
-                                           hidden_size=self.hidden_size,
-                                           numerical_stabilizer=self.numerical_stabilizer,
-                                           attention_dropout=self.attention_dropout_rate,
-                                           rel_pos_bins=self.rel_pos_bins,
-                                           use_rot_emb=self.use_rot_emb,
-                                           use_mask_pos=self.use_mask_pos,
-                                           kernel_transformation=self.kernel_transformation,
-                                           normalize=self.normalize,
-                                           seed = self.seed,
-                                           name = 'performer',
-                                           **kwargs)
+        if stable_variant:
+            self.performer = Performer_Encoder_stable(num_layers=self.num_transformer_layers,
+                                               num_heads=self.num_heads,
+                                               dim = self.dim,
+                                               d_model=self.d_model,
+                                               norm=self.norm,
+                                               max_seq_length=self.max_seq_length,
+                                               nb_random_features=self.nb_random_features,
+                                               hidden_size=self.hidden_size,
+                                               numerical_stabilizer=self.numerical_stabilizer,
+                                               attention_dropout=self.attention_dropout_rate,
+                                               rel_pos_bins=self.rel_pos_bins,
+                                               use_rot_emb=self.use_rot_emb,
+                                               use_mask_pos=self.use_mask_pos,
+                                               kernel_transformation=self.kernel_transformation,
+                                               normalize=self.normalize,
+                                               seed = self.seed,
+                                               name = 'performer',
+                                               **kwargs)
+        else:
+            self.performer = Performer_Encoder(num_layers=self.num_transformer_layers,
+                                               num_heads=self.num_heads,
+                                               dim = self.dim,
+                                               d_model=self.d_model,
+                                               norm=self.norm,
+                                               max_seq_length=self.max_seq_length,
+                                               nb_random_features=self.nb_random_features,
+                                               hidden_size=self.hidden_size,
+                                               numerical_stabilizer=self.numerical_stabilizer,
+                                               attention_dropout=self.attention_dropout_rate,
+                                               rel_pos_bins=self.rel_pos_bins,
+                                               use_rot_emb=self.use_rot_emb,
+                                               use_mask_pos=self.use_mask_pos,
+                                               kernel_transformation=self.kernel_transformation,
+                                               normalize=self.normalize,
+                                               seed = self.seed,
+                                               name = 'performer',
+                                               **kwargs)
 
 
         self.crop_final = TargetLengthCrop1D(uncropped_length=1536, 
@@ -215,11 +234,11 @@ class enformer_performer(tf.keras.Model):
             head: kl.Dense(num_channels,
                            activation='softplus',
                            use_bias=True)  for head, num_channels in heads_channels.items()
-      }
+        }
         
         
     def call(self, inputs, training:bool=True):
-
+        
         x = self.stem_conv(inputs,
                            training=training)
         x = self.stem_res_conv(x,
@@ -238,7 +257,8 @@ class enformer_performer(tf.keras.Model):
                         training=training)
         x = self.gelu(x)
 
-        return {head: head_module(x) for head, head_module in self.heads.items()}
+        out= {head: head_module(x) for head, head_module in self.heads.items()}
+        return out
     
 
     def get_config(self):
