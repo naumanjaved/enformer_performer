@@ -3,9 +3,9 @@
 python3 train_model_batchnorm_experiments.py \
             --tpu_name="pod1" \
             --tpu_zone="us-east1-d" \
-            --wandb_project="enformer_performer_batchnorm" \
+            --wandb_project="enformer_performer" \
             --wandb_user="njaved" \
-            --wandb_sweep_name="enformer_performer_batchnorm" \
+            --wandb_sweep_name="enformer_performer" \
             --gcs_project="picard-testing-176520" \
             --gcs_path="gs://genformer_data/expanded_originals/196k" \
             --gcs_path_TSS="gs://genformer_data/expanded_originals/196k/human/tfrecords_tss" \
@@ -13,8 +13,8 @@ python3 train_model_batchnorm_experiments.py \
             --warmup_frac=1.50 \
             --patience=25\
             --min_delta=0.00001 \
-            --model_save_dir="gs://picard-testing-176520/enformer_batchnorms/models" \
-            --model_save_basename="enformer_batchnorms" \
+            --model_save_dir="gs://picard-testing-176520/enformer_performer/models" \
+            --model_save_basename="enformer_performer" \
             --lr_base1="1.0e-06" \
             --lr_base2="8.0e-05" \
             --gradient_clip="1.0" \
