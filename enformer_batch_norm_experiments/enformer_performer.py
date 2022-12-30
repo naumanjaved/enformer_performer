@@ -34,6 +34,8 @@ class enformer_performer(tf.keras.Model):
                  numerical_stabilizer=0.001,
                  attention_dropout_rate=0.10,
                  dropout_rate=0.40,
+                 post_BN_dropout_rate=0.20,
+                 BN_momentum=0.99,
                  rel_pos_bins=1536,
                  use_mask_pos=False,
                  use_rot_emb=True,
@@ -77,6 +79,8 @@ class enformer_performer(tf.keras.Model):
         self.inits=inits
         self.load_init=load_init
         self.freeze_conv_layers=freeze_conv_layers
+        self.post_BN_dropout_rate=post_BN_dropout_rate
+        self.BN_momentum=BN_momentum
         
         if self.load_init:
             self.filter_list= [768,896,1024,1152,1280,1536]
@@ -98,22 +102,25 @@ class enformer_performer(tf.keras.Model):
                            train=True,
                            **kwargs):
             return tf.keras.Sequential([
-              syncbatchnorm(axis=-1,
+                syncbatchnorm(axis=-1,
                             center=True,
                             scale=True,
                             beta_initializer=beta_init if self.load_init else "zeros",
                             gamma_initializer=gamma_init if self.load_init else "ones",
                             trainable=train,
+                            momentum=self.BN_momentum,
                             moving_mean_initializer=mean_init if self.load_init else "zeros",
                             moving_variance_initializer=var_init if self.load_init else "ones",
                             **kwargs),
-              tfa.layers.GELU(),
-              kl.Conv1D(filters,
+                tfa.layers.GELU(),
+                kl.Conv1D(filters,
                          width, 
                          kernel_initializer=kernel_init if self.load_init else w_init,
                          bias_initializer=bias_init if self.load_init else bias_init,
                          trainable=train,
-                         padding=padding, **kwargs)
+                         padding=padding, **kwargs),
+                kl.Dropout(rate=self.post_BN_dropout_rate,
+                           **kwargs)
             ], name=name)
         
         ### conv stack for sequence inputs
