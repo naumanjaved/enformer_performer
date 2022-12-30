@@ -952,6 +952,18 @@ def parse_args(parser):
                         dest='lr_base2',
                         default="1.0e-03",
                         help='lr_base2')
+    parser.add_argument('--wd_1',
+                        dest='wd_1',
+                        type=str,
+                        help='wd_1')
+    parser.add_argument('--wd_2',
+                        dest='wd_2',
+                        type=str,
+                        help='wd_2')
+    parser.add_argument('--decay_frac',
+                        dest='decay_frac',
+                        type=str,
+                        help='decay_frac')
     parser.add_argument('--warmup_frac', 
                         dest = 'warmup_frac',
                         default=0.0,
@@ -984,6 +996,11 @@ def parse_args(parser):
                         default=1.0e-8,
                         type=float,
                         help= 'epsilon')
+    parser.add_argument('--BN_momentum',
+                        dest='BN_momentum',
+                        default="0.99",
+                        type=str,
+                        help= 'BN_momentum')
     parser.add_argument('--gradient_clip',
                         dest='gradient_clip',
                         type=str,
@@ -993,6 +1010,11 @@ def parse_args(parser):
                         dest='dropout_rate',
                         default="0.40",
                         help= 'dropout_rate')
+    parser.add_argument('--post_BN_dropout_rate',
+                        dest='post_BN_dropout_rate',
+                        default="0.20",
+                        type=str,
+                        help= 'post_BN_dropout_rate')
     parser.add_argument('--attention_dropout_rate',
                         dest='attention_dropout_rate',
                         default="0.05",
@@ -1060,11 +1082,6 @@ def parse_args(parser):
                         type=str,
                         default="poisson",
                         help= 'loss_type')
-    parser.add_argument('--model_type',
-                        dest='model_type',
-                        type=str,
-                        default="enformer_performer",
-                        help= 'model_type')
     parser.add_argument('--stable_variant',
                         dest='stable_variant',
                         type=str,

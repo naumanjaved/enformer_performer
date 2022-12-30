@@ -108,6 +108,15 @@ def main():
                 'lr_base2': {
                     'values':[float(x) for x in args.lr_base2.split(',')]
                 },
+                'wd_1': {
+                    'values':[float(x) for x in args.wd_1.split(',')]
+                },
+                'wd_2': {
+                    'values':[float(x) for x in args.wd_2.split(',')]
+                },
+                'decay_frac': {
+                    'values':[float(x) for x in args.decay_frac.split(',')]
+                },
                 'gradient_clip': {
                     'values': [float(x) for x in args.gradient_clip.split(',')]
                 },
@@ -156,8 +165,11 @@ def main():
                 'heads_channels': {
                     'values':[parse_dict_input(args.heads_channels)]
                 },
-                'model_type': {
-                    'values':[args.model_type]
+                'post_BN_dropout_rate': {
+                    'values': [float(x) for x in args.post_BN_dropout_rate.split(',')]
+                },
+                'BN_momentum': {
+                    'values': [float(x) for x in args.BN_momentum.split(',')]
                 }
             }
     }
@@ -207,7 +219,7 @@ def main():
                 
             print(wandb.config.filter_list)
             
-            run_name = '_'.join(['input_length-' + str(wandb.config.input_length),
+            run_name = '_'.join([str(wandb.config.input_length)[:3] + 'k',
                                  'load_init-' + str(wandb.config.load_init),
                                  'freeze-' + str(wandb.config.freeze_conv_layers),
                                  'LR1-' + str(wandb.config.lr_base1),
@@ -216,8 +228,7 @@ def main():
                                  'F-' + str(wandb.config.filter_list[-1]),
                                  'D-' + str(wandb.config.dropout_rate),
                                  'K-' + str(wandb.config.kernel_transformation),
-                                 'AD-' + str(wandb.config.attention_dropout_rate),
-                                 'model-' + str(wandb.config.model_type)])
+                                 'AD-' + str(wandb.config.attention_dropout_rate)])
             wandb.run.name = run_name
             base_name = wandb.config.model_save_basename + "_" + run_name
 
@@ -267,59 +278,35 @@ def main():
 
             print('created dataset iterators')
 
-            if wandb.config.model_type == 'enformer_performer':
-                import enformer_performer
-                print('loaded enformer_performer')
-                model = enformer_performer.enformer_performer(num_transformer_layers=wandb.config.num_transformer_layers,
-                                                              num_heads=wandb.config.num_heads,
-                                                              heads_channels=wandb.config.heads_channels,
-                                                              filter_list=wandb.config.filter_list,
-                                                              dim=wandb.config.filter_list[-1] // wandb.config.num_heads,
-                                                              d_model=wandb.config.filter_list[-1],
-                                                              norm=wandb.config.norm,
-                                                              max_seq_length=wandb.config.output_length,
-                                                              nb_random_features=wandb.config.nb_random_features,
-                                                              hidden_size=wandb.config.filter_list[-1],
-                                                              numerical_stabilizer=0.001,
-                                                              inits=inits,
-                                                              stable_variant=wandb.config.stable_variant,
-                                                              dropout_rate=wandb.config.dropout_rate,
-                                                              attention_dropout_rate=wandb.config.attention_dropout_rate,
-                                                              rel_pos_bins=wandb.config.output_length,
-                                                              use_mask_pos=wandb.config.use_mask_pos,
-                                                              use_rot_emb=wandb.config.use_rot_emb,
-                                                              load_init=wandb.config.load_init,
-                                                              freeze_conv_layers=wandb.config.freeze_conv_layers,
-                                                              kernel_transformation=wandb.config.kernel_transformation,
-                                                              normalize=wandb.config.normalize)
-            elif wandb.config.model_type == 'enformer_performer_LN_only':
-                import enformer_performer_LN_only
-                print('loaded enformer_performer,LN only')
-                model =\
-                    enformer_performer_LN_only.enformer_performer_LN_only(num_transformer_layers=wandb.config.num_transformer_layers,
-                                                              num_heads=wandb.config.num_heads,
-                                                              heads_channels=wandb.config.heads_channels,
-                                                              filter_list=wandb.config.filter_list,
-                                                              dim=wandb.config.filter_list[-1] // wandb.config.num_heads,
-                                                              d_model=wandb.config.filter_list[-1],
-                                                              norm=wandb.config.norm,
-                                                              max_seq_length=wandb.config.output_length,
-                                                              nb_random_features=wandb.config.nb_random_features,
-                                                              hidden_size=wandb.config.filter_list[-1],
-                                                              numerical_stabilizer=0.001,
-                                                              inits=inits,
-                                                              dropout_rate=wandb.config.dropout_rate,
-                                                              attention_dropout_rate=wandb.config.attention_dropout_rate,
-                                                              rel_pos_bins=wandb.config.output_length,
-                                                              use_mask_pos=wandb.config.use_mask_pos,
-                                                              use_rot_emb=wandb.config.use_rot_emb,
-                                                              load_init=wandb.config.load_init,
-                                                              freeze_conv_layers=wandb.config.freeze_conv_layers,
-                                                              kernel_transformation=wandb.config.kernel_transformation,
-                                                              normalize=wandb.config.normalize)
-            else:
-                raise ValueError('model type not implemented')
-            
+            #if wandb.config.model_type == 'enformer_performer':
+            import enformer_performer
+            print('loaded enformer_performer')
+            model = enformer_performer.enformer_performer(num_transformer_layers=wandb.config.num_transformer_layers,
+                                                          num_heads=wandb.config.num_heads,
+                                                          heads_channels=wandb.config.heads_channels,
+                                                          filter_list=wandb.config.filter_list,
+                                                          dim=wandb.config.filter_list[-1] // wandb.config.num_heads,
+                                                          d_model=wandb.config.filter_list[-1],
+                                                          norm=wandb.config.norm,
+                                                          max_seq_length=wandb.config.output_length,
+                                                          nb_random_features=wandb.config.nb_random_features,
+                                                          hidden_size=wandb.config.filter_list[-1],
+                                                          numerical_stabilizer=0.001,
+                                                          inits=inits,
+                                                          post_BN_dropout_rate=wandb.config.post_BN_dropout_rate,
+                                                          BN_momentum=wandb.config.BN_momentum,
+                                                          stable_variant=wandb.config.stable_variant,
+                                                          dropout_rate=wandb.config.dropout_rate,
+                                                          attention_dropout_rate=wandb.config.attention_dropout_rate,
+                                                          rel_pos_bins=wandb.config.output_length,
+                                                          use_mask_pos=wandb.config.use_mask_pos,
+                                                          use_rot_emb=wandb.config.use_rot_emb,
+                                                          load_init=wandb.config.load_init,
+                                                          freeze_conv_layers=wandb.config.freeze_conv_layers,
+                                                          kernel_transformation=wandb.config.kernel_transformation,
+                                                          normalize=wandb.config.normalize)
+
+
             checkpoint_name = wandb.config.model_save_dir + "/" + \
                             wandb.config.model_save_basename + "_" + wandb.run.name
 
@@ -329,22 +316,36 @@ def main():
             print('initialized model')
             scheduler1= tf.keras.optimizers.schedules.CosineDecay(
                 initial_learning_rate=wandb.config.lr_base1,
-                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=1.0)
+                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
             scheduler1=optimizers.WarmUp(initial_learning_rate=wandb.config.lr_base1,
                                          warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
                                          decay_schedule_fn=scheduler1)
+            scheduler1_wd= tf.keras.optimizers.schedules.CosineDecay(
+                initial_learning_rate=wandb.config.wd_1,
+                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
+            scheduler1_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_1,
+                                         warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
+                                         decay_schedule_fn=scheduler1)
             
-            optimizer1 = tf.keras.optimizers.Adam(learning_rate=scheduler1,
-                                                  epsilon=wandb.config.epsilon)
+            optimizer1 = tfa.optimizers.AdamW(learning_rate=scheduler1,
+                                              weight_decay=scheduler1_wd,
+                                              epsilon=wandb.config.epsilon)
             #####
             scheduler2= tf.keras.optimizers.schedules.CosineDecay(
                 initial_learning_rate=wandb.config.lr_base2,
-                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=1.0)
+                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
             scheduler2=optimizers.WarmUp(initial_learning_rate=wandb.config.lr_base2,
                                          warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
                                          decay_schedule_fn=scheduler2)
+            scheduler2_wd= tf.keras.optimizers.schedules.CosineDecay(
+                initial_learning_rate=wandb.config.wd_2,
+                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
+            scheduler2_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_2,
+                                         warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
+                                         decay_schedule_fn=scheduler2)
             
-            optimizer2 = tf.keras.optimizers.Adam(learning_rate=scheduler2,
+            optimizer2 = tfa.optimizers.AdamW(learning_rate=scheduler2,
+                                              weight_decay=scheduler2_wd,
                                               epsilon=wandb.config.epsilon)
             #####
             optimizers_in = optimizer1,optimizer2
@@ -467,14 +468,14 @@ def main():
                     pass
                 
                 
-                if wandb.config.model_type == 'enformer_performer':
-                    fig_gamma,fig_beta,fig_moving_means,fig_moving_vars=\
-                            training_utils.extract_batch_norm_stats(model)
-                    wandb.log({'gamma': fig_gamma,
-                               'beta': fig_beta,
-                               'moving_mean': fig_moving_means,
-                               'moving_var': fig_moving_vars},
-                              step=epoch_i)
+                #if wandb.config.model_type == 'enformer_performer':
+                fig_gamma,fig_beta,fig_moving_means,fig_moving_vars=\
+                        training_utils.extract_batch_norm_stats(model)
+                wandb.log({'gamma': fig_gamma,
+                           'beta': fig_beta,
+                           'moving_mean': fig_moving_means,
+                           'moving_var': fig_moving_vars},
+                          step=epoch_i)
                 
                 end = time.time()
                 duration = (end - start) / 60.
