@@ -1087,6 +1087,11 @@ def parse_args(parser):
                         type=str,
                         default="True",
                         help= 'stable_variant')
+    parser.add_argument('--optimizer',
+                        dest='optimizer',
+                        type=str,
+                        default="adamW",
+                        help= 'optimizer')
     args = parser.parse_args()
     return parser
 

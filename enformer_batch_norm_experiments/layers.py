@@ -644,7 +644,7 @@ class Performer_Encoder_stable(kl.Layer):
             
         return x,att_matrices
 
-
+    
 @tf.keras.utils.register_keras_serializable()
 class abs_sin_PE(kl.Layer):
     def __init__(self, 

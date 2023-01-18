@@ -170,6 +170,9 @@ def main():
                 },
                 'BN_momentum': {
                     'values': [float(x) for x in args.BN_momentum.split(',')]
+                },
+                'optimizer': {
+                    'values': [args.optimizer.lower()]
                 }
             }
     }
@@ -314,39 +317,63 @@ def main():
             model_checkpoint = tf.train.Checkpoint(module=model)
                                                           
             print('initialized model')
-            scheduler1= tf.keras.optimizers.schedules.CosineDecay(
-                initial_learning_rate=wandb.config.lr_base1,
-                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
-            scheduler1=optimizers.WarmUp(initial_learning_rate=wandb.config.lr_base1,
-                                         warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
-                                         decay_schedule_fn=scheduler1)
-            scheduler1_wd= tf.keras.optimizers.schedules.CosineDecay(
-                initial_learning_rate=wandb.config.wd_1,
-                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
-            scheduler1_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_1,
-                                         warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
-                                         decay_schedule_fn=scheduler1)
+            if wandb.config.optimizer == 'adamw':
             
-            optimizer1 = tfa.optimizers.AdamW(learning_rate=scheduler1,
-                                              weight_decay=scheduler1_wd,
-                                              epsilon=wandb.config.epsilon)
-            #####
-            scheduler2= tf.keras.optimizers.schedules.CosineDecay(
-                initial_learning_rate=wandb.config.lr_base2,
-                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
-            scheduler2=optimizers.WarmUp(initial_learning_rate=wandb.config.lr_base2,
-                                         warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
-                                         decay_schedule_fn=scheduler2)
-            scheduler2_wd= tf.keras.optimizers.schedules.CosineDecay(
-                initial_learning_rate=wandb.config.wd_2,
-                decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
-            scheduler2_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_2,
-                                         warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps,
-                                         decay_schedule_fn=scheduler2)
-            
-            optimizer2 = tfa.optimizers.AdamW(learning_rate=scheduler2,
-                                              weight_decay=scheduler2_wd,
-                                              epsilon=wandb.config.epsilon)
+                scheduler1= tf.keras.optimizers.schedules.CosineDecay(
+                    initial_learning_rate=wandb.config.lr_base1,
+                    decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
+                scheduler1=optimizers.WarmUp(initial_learning_rate=wandb.config.lr_base1,
+                                             warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps*wandb.config.num_epochs,
+                                             decay_schedule_fn=scheduler1)
+                scheduler1_wd= tf.keras.optimizers.schedules.CosineDecay(
+                    initial_learning_rate=wandb.config.wd_1,
+                    decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
+                scheduler1_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_1,
+                                             warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps*wandb.config.num_epochs,
+                                             decay_schedule_fn=scheduler1)
+
+                optimizer1 = tfa.optimizers.AdamW(learning_rate=scheduler1,
+                                                  weight_decay=scheduler1_wd,
+                                                  epsilon=wandb.config.epsilon)
+                #####
+                scheduler2= tf.keras.optimizers.schedules.CosineDecay(
+                    initial_learning_rate=wandb.config.lr_base2,
+                    decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
+                scheduler2=optimizers.WarmUp(initial_learning_rate=wandb.config.lr_base2,
+                                             warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps*wandb.config.num_epochs,
+                                             decay_schedule_fn=scheduler2)
+                scheduler2_wd= tf.keras.optimizers.schedules.CosineDecay(
+                    initial_learning_rate=wandb.config.wd_2,
+                    decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
+                scheduler2_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_2,
+                                             warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps*wandb.config.num_epochs,
+                                             decay_schedule_fn=scheduler2)
+
+                optimizer2 = tfa.optimizers.AdamW(learning_rate=scheduler2,
+                                                  weight_decay=scheduler2_wd,
+                                                  epsilon=wandb.config.epsilon)
+            elif wandb.config.optimizer == 'adabelief':
+                optimizer1 = tfa.optimizers.AdaBelief(
+                    learning_rate= wandb.config.lr_base1,
+                    epsilon= wandb.config.epsilon,
+                    weight_decay= wandb.config.wd_1,
+                    rectify=True,
+                    total_steps= wandb.config.total_steps*wandb.config.num_epochs,
+                    warmup_proportion= wandb.config.warmup_frac,
+                    min_lr= wandb.config.decay_frac * wandb.config.lr_base1
+                )
+                optimizer2 = tfa.optimizers.AdaBelief(
+                    learning_rate= wandb.config.lr_base2,
+                    epsilon= wandb.config.epsilon,
+                    weight_decay= wandb.config.wd_2,
+                    rectify=True,
+                    total_steps= wandb.config.total_steps*wandb.config.num_epochs,
+                    warmup_proportion= wandb.config.warmup_frac,
+                    min_lr= wandb.config.decay_frac * wandb.config.lr_base2
+                )
+            else:
+                raise ValueError('optimizer not found')
+                
             #####
             optimizers_in = optimizer1,optimizer2
             
