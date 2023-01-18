@@ -203,7 +203,7 @@ class FFN_stable(kl.Layer):
                                        activation='linear',
                                        use_bias=True)
         self.dropout = kl.Dropout(rate=self.ffn_dropout,**kwargs)
-        self.relu = kl.ReLU()
+        self.swiglu = SwiGLU()
         self.FFN_dense_narrow = kl.Dense(self.ffn_channels,
                                          activation='linear',
                                          use_bias=True)
@@ -224,7 +224,7 @@ class FFN_stable(kl.Layer):
         x = self.FFN_layer_norm(inputs)
         x = self.FFN_dense_wide(x)
         x = self.dropout(x,training=training)
-        x = self.relu(x)
+        x = self.swiglu(x)
         x = self.FFN_dense_narrow(x)
         x = self.dropout(x,training=training)
         return x
@@ -1192,3 +1192,22 @@ class Performer_stable(kl.Layer):
         x = self.layer_norm(inputs)
         return self.self_attention(x,x,rpe=rpe,**kwargs)
     """
+    
+    
+    
+    
+class SwiGLU(tf.keras.layers.Layer):
+    def __init__(self, bias=True, dim=-1, **kwargs):
+        """
+        SwiGLU Activation Layer
+        """
+        super(SwiGLU, self).__init__(**kwargs)
+        self.bias = bias
+        self.dim = dim
+        self.dense = tf.keras.layers.Dense(2, use_bias=bias)
+
+    def call(self, x):
+        out, gate = tf.split(x, num_split=2, axis=self.dim)
+        gate = tf.keras.activations.swish(gate)
+        x = tf.multiply(out, gate)
+        return x

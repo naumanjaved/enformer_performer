@@ -1,17 +1,17 @@
 #!/bin/bash -l
 
 python3 train_model_batchnorm_experiments.py \
-            --tpu_name="node-6" \
-            --tpu_zone="us-central1-a" \
+            --tpu_name="pod" \
+            --tpu_zone="us-east1-d" \
             --wandb_project="enformer_performer" \
             --wandb_user="njaved" \
             --wandb_sweep_name="enformer_performer" \
             --gcs_project="picard-testing-176520" \
             --gcs_path="gs://genformer_data/expanded_originals/196k" \
             --gcs_path_TSS="gs://genformer_data/expanded_originals/196k/human/tfrecords_tss" \
-            --num_epochs=40 \
+            --num_epochs=100 \
             --warmup_frac=1.50 \
-            --patience=25\
+            --patience=50\
             --min_delta=0.00001 \
             --model_save_dir="gs://picard-testing-176520/enformer_performer/models" \
             --model_save_basename="enformer_performer" \
@@ -25,7 +25,9 @@ python3 train_model_batchnorm_experiments.py \
             --post_BN_dropout_rate="0.05" \
             --epsilon=1.0e-16 \
             --num_parallel=8 \
-            --savefreq=45 \
+            --dropout_rate=0.40 \
+            --attention_dropout_rate=0.40 \
+            --savefreq=50 \
             --val_examples_TSS=2134 \
             --load_init="False" \
             --freeze_conv_layers="False" \
