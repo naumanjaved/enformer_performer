@@ -1207,7 +1207,7 @@ class SwiGLU(tf.keras.layers.Layer):
         self.dense = tf.keras.layers.Dense(2, use_bias=bias)
 
     def call(self, x):
-        out, gate = tf.split(x, num_split=2, axis=self.dim)
+        out, gate = tf.split(x, num_or_size_splits=2, axis=self.dim)
         gate = tf.keras.activations.swish(gate)
         x = tf.multiply(out, gate)
         return x
