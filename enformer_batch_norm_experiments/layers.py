@@ -203,7 +203,7 @@ class FFN_stable(kl.Layer):
                                        activation='linear',
                                        use_bias=True)
         self.dropout = kl.Dropout(rate=self.ffn_dropout,**kwargs)
-        self.swiglu = SwiGLU()
+        self.relu = kl.ReLU()
         self.FFN_dense_narrow = kl.Dense(self.ffn_channels,
                                          activation='linear',
                                          use_bias=True)
@@ -224,7 +224,7 @@ class FFN_stable(kl.Layer):
         x = self.FFN_layer_norm(inputs)
         x = self.FFN_dense_wide(x)
         x = self.dropout(x,training=training)
-        x = self.swiglu(x)
+        x = self.relu(x)
         x = self.FFN_dense_narrow(x)
         x = self.dropout(x,training=training)
         return x
