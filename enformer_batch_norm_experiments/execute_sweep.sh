@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 python3 train_model_batchnorm_experiments.py \
-            --tpu_name="node-4" \
+            --tpu_name="pod" \
             --tpu_zone="us-east1-d" \
             --wandb_project="enformer_performer" \
             --wandb_user="njaved" \
@@ -9,25 +9,25 @@ python3 train_model_batchnorm_experiments.py \
             --gcs_project="picard-testing-176520" \
             --gcs_path="gs://genformer_data/expanded_originals/196k" \
             --gcs_path_TSS="gs://genformer_data/expanded_originals/196k/human/tfrecords_tss" \
-            --num_epochs=100 \
-            --warmup_frac=1.50 \
+            --num_epochs=150 \
+            --warmup_frac=0.025 \
             --patience=50\
             --min_delta=0.00001 \
             --model_save_dir="gs://picard-testing-176520/enformer_performer/models" \
-            --model_save_basename="enformer_performer" \
+            --model_save_basename="enformer_performer_230119" \
             --lr_base1="1.0e-06" \
             --lr_base2="7.5e-05" \
-            --wd_1="1.0e-06" \
-            --wd_2="1.0e-06" \
-            --decay_frac="0.80" \
+            --wd_1="0.0" \
+            --wd_2="0.0" \
+            --decay_frac="0.95" \
             --gradient_clip="1.0" \
-            --BN_momentum="0.90" \
-            --post_BN_dropout_rate="0.05" \
+            --BN_momentum="0.99" \
+            --post_BN_dropout_rate="0.00" \
             --epsilon=1.0e-8 \
             --num_parallel=8 \
             --dropout_rate=0.40 \
-            --attention_dropout_rate=0.40 \
-            --savefreq=50 \
+            --attention_dropout_rate=0.10 \
+            --savefreq=5 \
             --val_examples_TSS=2134 \
             --load_init="True" \
             --freeze_conv_layers="False" \

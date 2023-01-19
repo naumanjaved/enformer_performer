@@ -256,7 +256,7 @@ def main():
             organism_dict = parse_dict_input_tuple(args.num_examples_dict,
                                                    GLOBAL_BATCH_SIZE)
 
-            wandb.config.update({"total_steps" : (organism_dict['human'][0]) // GLOBAL_BATCH_SIZE},
+            wandb.config.update({"total_steps" : (organism_dict['human'][0] + organism_dict['mouse'][1]) // GLOBAL_BATCH_SIZE},
                                 allow_val_change=True)
             wandb.config.update({"val_steps_TSS": args.val_examples_TSS // GLOBAL_BATCH_SIZE},
                                 allow_val_change=True)
