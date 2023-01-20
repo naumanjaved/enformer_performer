@@ -45,6 +45,7 @@ class enformer_performer(tf.keras.Model):
                  inits=None,
                  kernel_transformation="softmax_kernel_transformation",
                  normalize=True,
+                 use_max_pool=True,
                  seed=5,
                  name: str = 'enformer_performer',
                  **kwargs):
@@ -81,6 +82,7 @@ class enformer_performer(tf.keras.Model):
         self.freeze_conv_layers=freeze_conv_layers
         self.post_BN_dropout_rate=post_BN_dropout_rate
         self.BN_momentum=BN_momentum
+        self.use_max_pool=use_max_pool
         
         if self.load_init:
             self.filter_list= [768,896,1024,1152,1280,1536]
@@ -141,43 +143,77 @@ class enformer_performer(tf.keras.Model):
                                                    bias_init=self.inits['stem_res_conv_b'] if self.load_init else None,
                                                    train=False if self.freeze_conv_layers else True,
                                                    name='pointwise_conv_block'))
-        self.stem_pool = SoftmaxPooling1D(per_channel=True,
-                                          w_init_scale=2.0,
-                                          pool_size=2,
-                                          k_init=self.inits['stem_pool'] if self.load_init else None,
-                                          train=False if self.freeze_conv_layers else True,
-                                          name ='stem_pool')
+        if self.use_max_pool:
+            self.stem_pool = kl.MaxPool1D(pool_size=2,
+                                          strides=2,
+                                          padding='same')
+            
+            self.conv_tower = tf.keras.Sequential([
+                tf.keras.Sequential([
+                    enf_conv_block(num_filters, 
+                                   5, 
+                                   beta_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
+                                   gamma_init=self.inits['BN1_g_' + str(i)] if self.load_init else None,
+                                   mean_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
+                                   var_init=self.inits['BN1_v_' + str(i)] if self.load_init else None,
+                                   kernel_init=self.inits['conv1_k_' + str(i)] if self.load_init else None,
+                                   bias_init=self.inits['conv1_b_' + str(i)] if self.load_init else None,
+                                   train=False if self.freeze_conv_layers else True,
+                                   padding='same'),
+                    Residual(enf_conv_block(num_filters, 1, 
+                                           beta_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
+                                           gamma_init=self.inits['BN2_g_' + str(i)] if self.load_init else None,
+                                           mean_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
+                                           var_init=self.inits['BN2_v_' + str(i)] if self.load_init else None,
+                                           kernel_init=self.inits['conv2_k_' + str(i)] if self.load_init else None,
+                                           bias_init=self.inits['conv2_b_' + str(i)] if self.load_init else None,
+                                            train=False if self.freeze_conv_layers else True,
+                                            name='pointwise_conv_block')),
+                    kl.MaxPool1D(pool_size=2,
+                                 strides=2,
+                                 padding='same'),
+                    ],
+                           name=f'conv_tower_block_{i}')
+                for i, num_filters in enumerate(self.filter_list)], name='conv_tower')
+            
+        else:
 
-        
-        self.conv_tower = tf.keras.Sequential([
-            tf.keras.Sequential([
-                enf_conv_block(num_filters, 
-                               5, 
-                               beta_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
-                               gamma_init=self.inits['BN1_g_' + str(i)] if self.load_init else None,
-                               mean_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
-                               var_init=self.inits['BN1_v_' + str(i)] if self.load_init else None,
-                               kernel_init=self.inits['conv1_k_' + str(i)] if self.load_init else None,
-                               bias_init=self.inits['conv1_b_' + str(i)] if self.load_init else None,
-                               train=False if self.freeze_conv_layers else True,
-                               padding='same'),
-                Residual(enf_conv_block(num_filters, 1, 
-                                       beta_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
-                                       gamma_init=self.inits['BN2_g_' + str(i)] if self.load_init else None,
-                                       mean_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
-                                       var_init=self.inits['BN2_v_' + str(i)] if self.load_init else None,
-                                       kernel_init=self.inits['conv2_k_' + str(i)] if self.load_init else None,
-                                       bias_init=self.inits['conv2_b_' + str(i)] if self.load_init else None,
-                                        train=False if self.freeze_conv_layers else True,
-                                        name='pointwise_conv_block')),
-                SoftmaxPooling1D(per_channel=True,
-                                 w_init_scale=2.0,
-                                 k_init=self.inits['pool_'+str(i)] if self.load_init else None,
-                                 train=False if self.freeze_conv_layers else True,
-                                 pool_size=2),
-                ],
-                       name=f'conv_tower_block_{i}')
-            for i, num_filters in enumerate(self.filter_list)], name='conv_tower')
+
+            self.stem_pool = SoftmaxPooling1D(per_channel=True,
+                                              w_init_scale=2.0,
+                                              pool_size=2,
+                                              k_init=self.inits['stem_pool'] if self.load_init else None,
+                                              train=False if self.freeze_conv_layers else True,
+                                              name ='stem_pool')
+            self.conv_tower = tf.keras.Sequential([
+                tf.keras.Sequential([
+                    enf_conv_block(num_filters, 
+                                   5, 
+                                   beta_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
+                                   gamma_init=self.inits['BN1_g_' + str(i)] if self.load_init else None,
+                                   mean_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
+                                   var_init=self.inits['BN1_v_' + str(i)] if self.load_init else None,
+                                   kernel_init=self.inits['conv1_k_' + str(i)] if self.load_init else None,
+                                   bias_init=self.inits['conv1_b_' + str(i)] if self.load_init else None,
+                                   train=False if self.freeze_conv_layers else True,
+                                   padding='same'),
+                    Residual(enf_conv_block(num_filters, 1, 
+                                           beta_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
+                                           gamma_init=self.inits['BN2_g_' + str(i)] if self.load_init else None,
+                                           mean_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
+                                           var_init=self.inits['BN2_v_' + str(i)] if self.load_init else None,
+                                           kernel_init=self.inits['conv2_k_' + str(i)] if self.load_init else None,
+                                           bias_init=self.inits['conv2_b_' + str(i)] if self.load_init else None,
+                                            train=False if self.freeze_conv_layers else True,
+                                            name='pointwise_conv_block')),
+                    SoftmaxPooling1D(per_channel=True,
+                                     w_init_scale=2.0,
+                                     k_init=self.inits['pool_'+str(i)] if self.load_init else None,
+                                     train=False if self.freeze_conv_layers else True,
+                                     pool_size=2),
+                    ],
+                           name=f'conv_tower_block_{i}')
+                for i, num_filters in enumerate(self.filter_list)], name='conv_tower')
         
         
 

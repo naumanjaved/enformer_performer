@@ -1062,6 +1062,11 @@ def parse_args(parser):
                         type=str,
                         default="True",
                         help= 'use_rot_emb')
+    parser.add_argument('--use_max_pool',
+                        dest='use_max_pool',
+                        type=str,
+                        default="True",
+                        help= 'use_max_pool')
     parser.add_argument('--use_mask_pos',
                         dest='use_mask_pos',
                         type=str,

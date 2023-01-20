@@ -173,6 +173,9 @@ def main():
                 },
                 'optimizer': {
                     'values': [args.optimizer.lower()]
+                },
+                'use_max_pool': {
+                    'values':[parse_bool_str(x) for x in args.use_max_pool.split(',')]
                 }
             }
     }
@@ -231,6 +234,7 @@ def main():
                                  'F-' + str(wandb.config.filter_list[-1]),
                                  'D-' + str(wandb.config.dropout_rate),
                                  'K-' + str(wandb.config.kernel_transformation),
+                                 'MP-' + str(wandb.config.use_max_pool),
                                  'AD-' + str(wandb.config.attention_dropout_rate)])
             wandb.run.name = run_name
             base_name = wandb.config.model_save_basename + "_" + run_name
@@ -307,7 +311,8 @@ def main():
                                                           load_init=wandb.config.load_init,
                                                           freeze_conv_layers=wandb.config.freeze_conv_layers,
                                                           kernel_transformation=wandb.config.kernel_transformation,
-                                                          normalize=wandb.config.normalize)
+                                                          normalize=wandb.config.normalize,
+                                                          use_max_pool=wandb.config.use_max_pool)
 
 
             checkpoint_name = wandb.config.model_save_dir + "/" + \
