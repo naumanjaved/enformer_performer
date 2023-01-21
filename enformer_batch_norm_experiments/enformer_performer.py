@@ -143,6 +143,8 @@ class enformer_performer(tf.keras.Model):
                                train=True,
                                **kwargs):
                 return tf.keras.Sequential([
+                    kl.Dropout(rate=self.post_BN_dropout_rate,
+                               **kwargs),
                     kl.Conv1D(filters,
                              kernel_size=width,
                              kernel_initializer='glorot_uniform',
@@ -157,9 +159,7 @@ class enformer_performer(tf.keras.Model):
                                 momentum=self.BN_momentum,
                                 moving_mean_initializer="zeros",
                                 moving_variance_initializer="ones",
-                                **kwargs),
-                    kl.Dropout(rate=self.post_BN_dropout_rate,
-                               **kwargs)
+                                **kwargs)
                 ], name=name)
         ### conv stack for sequence inputs
         self.stem_conv = kl.Conv1D(filters= int(self.filter_list[-1]) // 2,
@@ -302,7 +302,7 @@ class enformer_performer(tf.keras.Model):
         
         self.final_pointwise_conv = conv_block(filters=self.filter_list[-1] * 2,
                                                   **kwargs,
-                                                  name = 'final_pointwise_rna')
+                                                  name = 'final_pointwise')
         self.dropout = kl.Dropout(rate=self.dropout_rate / 8,
                                   **kwargs)
         self.gelu = tfa.layers.GELU()

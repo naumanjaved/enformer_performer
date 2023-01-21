@@ -9,20 +9,20 @@ python3 train_model_batchnorm_experiments.py \
             --gcs_project="picard-testing-176520" \
             --gcs_path="gs://genformer_data/expanded_originals/196k" \
             --gcs_path_TSS="gs://genformer_data/expanded_originals/196k/human/tfrecords_tss" \
-            --num_epochs=150 \
-            --warmup_frac=0.025 \
+            --num_epochs=100 \
+            --warmup_frac=0.02 \
             --patience=50\
             --min_delta=0.00001 \
             --model_save_dir="gs://picard-testing-176520/enformer_performer/models" \
             --model_save_basename="enformer_performer_230120" \
-            --lr_base1="1.0e-06" \
+            --lr_base1="8.0e-05" \
             --lr_base2="8.0e-05" \
-            --wd_1="1.0e-08" \
-            --wd_2="8.0e-07" \
-            --decay_frac="0.95" \
-            --gradient_clip="1.0" \
+            --wd_1="0.0" \
+            --wd_2="0.0" \
+            --decay_frac="0.90" \
+            --gradient_clip="0.20" \
             --BN_momentum="0.99" \
-            --post_BN_dropout_rate="0.00" \
+            --post_BN_dropout_rate="0.05" \
             --epsilon=1.0e-8 \
             --num_parallel=8 \
             --dropout_rate=0.40 \
@@ -39,5 +39,6 @@ python3 train_model_batchnorm_experiments.py \
             --heads_channels="human:5313;mouse:1643" \
             --kernel_transformation="relu_kernel_transformation" \
             --enformer_checkpoint_path="sonnet_weights" \
-            --use_enf_conv_block="False"
+            --use_enf_conv_block="True" \
+            --filter_list="192,221,253,291,334,384"
             
