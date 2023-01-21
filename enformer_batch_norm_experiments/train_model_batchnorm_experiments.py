@@ -176,6 +176,9 @@ def main():
                 },
                 'use_max_pool': {
                     'values':[parse_bool_str(x) for x in args.use_max_pool.split(',')]
+                },
+                'use_enf_conv_block': {
+                    'values':[parse_bool_str(x) for x in args.use_enf_conv_block.split(',')]
                 }
             }
     }
@@ -312,6 +315,7 @@ def main():
                                                           freeze_conv_layers=wandb.config.freeze_conv_layers,
                                                           kernel_transformation=wandb.config.kernel_transformation,
                                                           normalize=wandb.config.normalize,
+                                                          use_enf_conv_block=wandb.config.use_enf_conv_block,
                                                           use_max_pool=wandb.config.use_max_pool)
 
 

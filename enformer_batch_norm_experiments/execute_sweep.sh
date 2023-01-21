@@ -29,7 +29,7 @@ python3 train_model_batchnorm_experiments.py \
             --attention_dropout_rate=0.05 \
             --savefreq=5 \
             --val_examples_TSS=2134 \
-            --load_init="True" \
+            --load_init="False" \
             --freeze_conv_layers="False" \
             --num_examples_dict="human:34021,2213;mouse:29295,2209" \
             --num_transformer_layers=4 \
@@ -38,5 +38,6 @@ python3 train_model_batchnorm_experiments.py \
             --optimizer="adamw" \
             --heads_channels="human:5313;mouse:1643" \
             --kernel_transformation="relu_kernel_transformation" \
-            --enformer_checkpoint_path="sonnet_weights"
+            --enformer_checkpoint_path="sonnet_weights" \
+            --use_enf_conv_block="False"
             

@@ -616,7 +616,7 @@ def return_dataset(gcs_path,
                                                     wc)))
     #print(list_files)
     random.shuffle(list_files)
-    files = tf.data.Dataset.list_files(list_files)
+    files = tf.data.Dataset.list_files(list_files,shuffle=True)
     
     dataset = tf.data.TFRecordDataset(files,
                                       compression_type='ZLIB',
@@ -1092,6 +1092,11 @@ def parse_args(parser):
                         type=str,
                         default="True",
                         help= 'stable_variant')
+    parser.add_argument('--use_enf_conv_block',
+                        dest='use_enf_conv_block',
+                        type=str,
+                        default="True",
+                        help= 'use_enf_conv_block')
     parser.add_argument('--optimizer',
                         dest='optimizer',
                         type=str,

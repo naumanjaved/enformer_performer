@@ -42,6 +42,7 @@ class enformer_performer(tf.keras.Model):
                  load_init=False,
                  freeze_conv_layers=False,
                  stable_variant=True,
+                 use_enf_conv_block=True,
                  inits=None,
                  kernel_transformation="softmax_kernel_transformation",
                  normalize=True,
@@ -83,48 +84,83 @@ class enformer_performer(tf.keras.Model):
         self.post_BN_dropout_rate=post_BN_dropout_rate
         self.BN_momentum=BN_momentum
         self.use_max_pool=use_max_pool
+        self.use_enf_conv_block=use_enf_conv_block
         
         if self.load_init:
             self.filter_list= [768,896,1024,1152,1280,1536]
         else:
             self.filter_list=filter_list
         
-        
-        def enf_conv_block(filters, 
-                           width=1, 
-                           w_init='glorot_uniform', 
-                           padding='same', 
-                           name='conv_block',
-                           beta_init=None,
-                           gamma_init=None,
-                           mean_init=None,
-                           var_init=None,
-                           kernel_init=None,
-                           bias_init=None,
-                           train=True,
-                           **kwargs):
-            return tf.keras.Sequential([
-                syncbatchnorm(axis=-1,
-                            center=True,
-                            scale=True,
-                            beta_initializer=beta_init if self.load_init else "zeros",
-                            gamma_initializer=gamma_init if self.load_init else "ones",
-                            trainable=train,
-                            momentum=self.BN_momentum,
-                            moving_mean_initializer=mean_init if self.load_init else "zeros",
-                            moving_variance_initializer=var_init if self.load_init else "ones",
-                            **kwargs),
-                tfa.layers.GELU(),
-                kl.Conv1D(filters,
-                         width, 
-                         kernel_initializer=kernel_init if self.load_init else w_init,
-                         bias_initializer=bias_init if self.load_init else bias_init,
-                         trainable=train,
-                         padding=padding, **kwargs),
-                kl.Dropout(rate=self.post_BN_dropout_rate,
-                           **kwargs)
-            ], name=name)
-        
+        if self.use_enf_conv_block:
+            def conv_block(filters, 
+                               width=1, 
+                               w_init='glorot_uniform', 
+                               b_init='zeros',
+                               padding='same', 
+                               name='conv_block',
+                               beta_init=None,
+                               gamma_init=None,
+                               mean_init=None,
+                               var_init=None,
+                               kernel_init=None,
+                               bias_init=None,
+                               train=True,
+                               **kwargs):
+                return tf.keras.Sequential([
+                    syncbatchnorm(axis=-1,
+                                center=True,
+                                scale=True,
+                                beta_initializer=beta_init if self.load_init else "zeros",
+                                gamma_initializer=gamma_init if self.load_init else "ones",
+                                trainable=train,
+                                momentum=self.BN_momentum,
+                                moving_mean_initializer=mean_init if self.load_init else "zeros",
+                                moving_variance_initializer=var_init if self.load_init else "ones",
+                                **kwargs),
+                    tfa.layers.GELU(),
+                    kl.Conv1D(filters,
+                             kernel_size=width, 
+                             kernel_initializer=kernel_init if self.load_init else w_init,
+                             bias_initializer=bias_init if self.load_init else b_init,
+                             trainable=train,
+                             padding=padding, **kwargs),
+                    kl.Dropout(rate=self.post_BN_dropout_rate,
+                               **kwargs)
+                ], name=name)
+        else:
+            def conv_block(filters, 
+                               width=1, 
+                               w_init='glorot_uniform', 
+                               b_init='zeros',
+                               padding='same', 
+                               name='conv_block',
+                               beta_init=None,
+                               gamma_init=None,
+                               mean_init=None,
+                               var_init=None,
+                               kernel_init=None,
+                               bias_init=None,
+                               train=True,
+                               **kwargs):
+                return tf.keras.Sequential([
+                    kl.Conv1D(filters,
+                             kernel_size=width,
+                             kernel_initializer='glorot_uniform',
+                             bias_initializer='zeros',
+                             padding='same', **kwargs),
+                    tfa.layers.GELU(),
+                    syncbatchnorm(axis=-1,
+                                center=True,
+                                scale=True,
+                                beta_initializer="zeros",
+                                gamma_initializer="ones",
+                                momentum=self.BN_momentum,
+                                moving_mean_initializer="zeros",
+                                moving_variance_initializer="ones",
+                                **kwargs),
+                    kl.Dropout(rate=self.post_BN_dropout_rate,
+                               **kwargs)
+                ], name=name)
         ### conv stack for sequence inputs
         self.stem_conv = kl.Conv1D(filters= int(self.filter_list[-1]) // 2,
                                    kernel_size=15,
@@ -134,7 +170,7 @@ class enformer_performer(tf.keras.Model):
                                    trainable=False if self.freeze_conv_layers else True,
                                    padding='same')
                                    #data_format='channels_last')
-        self.stem_res_conv=Residual(enf_conv_block(int(self.filter_list[-1]) // 2, 1,
+        self.stem_res_conv=Residual(conv_block(int(self.filter_list[-1]) // 2, 1,
                                                    beta_init=self.inits['stem_res_conv_BN_b'] if self.load_init else None,
                                                    gamma_init=self.inits['stem_res_conv_BN_g'] if self.load_init else None,
                                                    mean_init=self.inits['stem_res_conv_BN_m'] if self.load_init else None,
@@ -150,7 +186,7 @@ class enformer_performer(tf.keras.Model):
             
             self.conv_tower = tf.keras.Sequential([
                 tf.keras.Sequential([
-                    enf_conv_block(num_filters, 
+                    conv_block(num_filters, 
                                    5, 
                                    beta_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
                                    gamma_init=self.inits['BN1_g_' + str(i)] if self.load_init else None,
@@ -160,7 +196,7 @@ class enformer_performer(tf.keras.Model):
                                    bias_init=self.inits['conv1_b_' + str(i)] if self.load_init else None,
                                    train=False if self.freeze_conv_layers else True,
                                    padding='same'),
-                    Residual(enf_conv_block(num_filters, 1, 
+                    Residual(conv_block(num_filters, 1, 
                                            beta_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
                                            gamma_init=self.inits['BN2_g_' + str(i)] if self.load_init else None,
                                            mean_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
@@ -187,7 +223,7 @@ class enformer_performer(tf.keras.Model):
                                               name ='stem_pool')
             self.conv_tower = tf.keras.Sequential([
                 tf.keras.Sequential([
-                    enf_conv_block(num_filters, 
+                    conv_block(num_filters, 
                                    5, 
                                    beta_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
                                    gamma_init=self.inits['BN1_g_' + str(i)] if self.load_init else None,
@@ -197,7 +233,7 @@ class enformer_performer(tf.keras.Model):
                                    bias_init=self.inits['conv1_b_' + str(i)] if self.load_init else None,
                                    train=False if self.freeze_conv_layers else True,
                                    padding='same'),
-                    Residual(enf_conv_block(num_filters, 1, 
+                    Residual(conv_block(num_filters, 1, 
                                            beta_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
                                            gamma_init=self.inits['BN2_g_' + str(i)] if self.load_init else None,
                                            mean_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
@@ -264,7 +300,7 @@ class enformer_performer(tf.keras.Model):
                                              name='target_input')
         
         
-        self.final_pointwise_conv = enf_conv_block(filters=self.filter_list[-1] * 2,
+        self.final_pointwise_conv = conv_block(filters=self.filter_list[-1] * 2,
                                                   **kwargs,
                                                   name = 'final_pointwise_rna')
         self.dropout = kl.Dropout(rate=self.dropout_rate / 8,
