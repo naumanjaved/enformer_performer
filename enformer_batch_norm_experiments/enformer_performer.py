@@ -43,6 +43,7 @@ class enformer_performer(tf.keras.Model):
                  freeze_conv_layers=False,
                  stable_variant=True,
                  use_enf_conv_block=True,
+                 use_LN_only=False,
                  inits=None,
                  kernel_transformation="softmax_kernel_transformation",
                  normalize=True,
@@ -85,6 +86,7 @@ class enformer_performer(tf.keras.Model):
         self.BN_momentum=BN_momentum
         self.use_max_pool=use_max_pool
         self.use_enf_conv_block=use_enf_conv_block
+        self.use_LN_only=use_LN_only
         
         if self.load_init:
             self.filter_list= [768,896,1024,1152,1280,1536]
@@ -128,39 +130,70 @@ class enformer_performer(tf.keras.Model):
                                **kwargs)
                 ], name=name)
         else:
-            def conv_block(filters, 
-                               width=1, 
-                               w_init='glorot_uniform', 
-                               b_init='zeros',
-                               padding='same', 
-                               name='conv_block',
-                               beta_init=None,
-                               gamma_init=None,
-                               mean_init=None,
-                               var_init=None,
-                               kernel_init=None,
-                               bias_init=None,
-                               train=True,
-                               **kwargs):
-                return tf.keras.Sequential([
-                    kl.Dropout(rate=self.post_BN_dropout_rate,
-                               **kwargs),
-                    kl.Conv1D(filters,
-                             kernel_size=width,
-                             kernel_initializer='glorot_uniform',
-                             bias_initializer='zeros',
-                             padding='same', **kwargs),
-                    tfa.layers.GELU(),
-                    syncbatchnorm(axis=-1,
-                                center=True,
-                                scale=True,
-                                beta_initializer="zeros",
-                                gamma_initializer="ones",
-                                momentum=self.BN_momentum,
-                                moving_mean_initializer="zeros",
-                                moving_variance_initializer="ones",
-                                **kwargs)
-                ], name=name)
+            if not self.use_LN_only:
+                def conv_block(filters, 
+                                   width=1, 
+                                   w_init='glorot_uniform', 
+                                   b_init='zeros',
+                                   padding='same', 
+                                   name='conv_block',
+                                   beta_init=None,
+                                   gamma_init=None,
+                                   mean_init=None,
+                                   var_init=None,
+                                   kernel_init=None,
+                                   bias_init=None,
+                                   train=True,
+                                   **kwargs):
+                    return tf.keras.Sequential([
+                        kl.Dropout(rate=self.post_BN_dropout_rate,
+                                   **kwargs),
+                        kl.Conv1D(filters,
+                                 kernel_size=width,
+                                 kernel_initializer='glorot_uniform',
+                                 bias_initializer='zeros',
+                                 padding='same', **kwargs),
+                        tfa.layers.GELU(),
+                        syncbatchnorm(axis=-1,
+                                    center=True,
+                                    scale=True,
+                                    beta_initializer="zeros",
+                                    gamma_initializer="ones",
+                                    momentum=self.BN_momentum,
+                                    moving_mean_initializer="zeros",
+                                    moving_variance_initializer="ones",
+                                    **kwargs)
+                    ], name=name)
+            else:
+                def conv_block(filters, 
+                                   width=1, 
+                                   w_init='glorot_uniform', 
+                                   b_init='zeros',
+                                   padding='same', 
+                                   name='conv_block',
+                                   beta_init=None,
+                                   gamma_init=None,
+                                   mean_init=None,
+                                   var_init=None,
+                                   kernel_init=None,
+                                   bias_init=None,
+                                   train=True,
+                                   **kwargs):
+                    return tf.keras.Sequential([
+                        kl.Dropout(rate=self.post_BN_dropout_rate,
+                                   **kwargs),
+                        kl.Conv1D(filters,
+                                 kernel_size=width,
+                                 kernel_initializer='glorot_uniform',
+                                 bias_initializer='zeros',
+                                 padding='same', **kwargs),
+                        tfa.layers.GELU(),
+                        kl.LayerNormalization(axis=-1,
+                                                  scale=True,
+                                                  center=True,
+                                                  beta_initializer="zeros",
+                                                  gamma_initializer="ones")
+                    ], name=name)
         ### conv stack for sequence inputs
         self.stem_conv = kl.Conv1D(filters= int(self.filter_list[-1]) // 2,
                                    kernel_size=15,
@@ -190,7 +223,7 @@ class enformer_performer(tf.keras.Model):
                                    5, 
                                    beta_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
                                    gamma_init=self.inits['BN1_g_' + str(i)] if self.load_init else None,
-                                   mean_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
+                                   mean_init=self.inits['BN1_m_' + str(i)] if self.load_init else None,
                                    var_init=self.inits['BN1_v_' + str(i)] if self.load_init else None,
                                    kernel_init=self.inits['conv1_k_' + str(i)] if self.load_init else None,
                                    bias_init=self.inits['conv1_b_' + str(i)] if self.load_init else None,
@@ -199,7 +232,7 @@ class enformer_performer(tf.keras.Model):
                     Residual(conv_block(num_filters, 1, 
                                            beta_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
                                            gamma_init=self.inits['BN2_g_' + str(i)] if self.load_init else None,
-                                           mean_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
+                                           mean_init=self.inits['BN2_m_' + str(i)] if self.load_init else None,
                                            var_init=self.inits['BN2_v_' + str(i)] if self.load_init else None,
                                            kernel_init=self.inits['conv2_k_' + str(i)] if self.load_init else None,
                                            bias_init=self.inits['conv2_b_' + str(i)] if self.load_init else None,
@@ -227,7 +260,7 @@ class enformer_performer(tf.keras.Model):
                                    5, 
                                    beta_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
                                    gamma_init=self.inits['BN1_g_' + str(i)] if self.load_init else None,
-                                   mean_init=self.inits['BN1_b_' + str(i)] if self.load_init else None,
+                                   mean_init=self.inits['BN1_m_' + str(i)] if self.load_init else None,
                                    var_init=self.inits['BN1_v_' + str(i)] if self.load_init else None,
                                    kernel_init=self.inits['conv1_k_' + str(i)] if self.load_init else None,
                                    bias_init=self.inits['conv1_b_' + str(i)] if self.load_init else None,
@@ -236,7 +269,7 @@ class enformer_performer(tf.keras.Model):
                     Residual(conv_block(num_filters, 1, 
                                            beta_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
                                            gamma_init=self.inits['BN2_g_' + str(i)] if self.load_init else None,
-                                           mean_init=self.inits['BN2_b_' + str(i)] if self.load_init else None,
+                                           mean_init=self.inits['BN2_m_' + str(i)] if self.load_init else None,
                                            var_init=self.inits['BN2_v_' + str(i)] if self.load_init else None,
                                            kernel_init=self.inits['conv2_k_' + str(i)] if self.load_init else None,
                                            bias_init=self.inits['conv2_b_' + str(i)] if self.load_init else None,

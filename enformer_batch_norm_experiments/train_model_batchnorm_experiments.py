@@ -179,6 +179,9 @@ def main():
                 },
                 'use_enf_conv_block': {
                     'values':[parse_bool_str(x) for x in args.use_enf_conv_block.split(',')]
+                },
+                'use_LN_only': {
+                    'values':[parse_bool_str(x) for x in args.use_LN_only.split(',')]
                 }
             }
     }
@@ -303,6 +306,7 @@ def main():
                                                           hidden_size=wandb.config.filter_list[-1],
                                                           numerical_stabilizer=0.001,
                                                           inits=inits,
+                                                          use_LN_only=wandb.config.use_LN_only,
                                                           post_BN_dropout_rate=wandb.config.post_BN_dropout_rate,
                                                           BN_momentum=wandb.config.BN_momentum,
                                                           stable_variant=wandb.config.stable_variant,
