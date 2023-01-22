@@ -153,7 +153,6 @@ class enformer_performer(tf.keras.Model):
                                  kernel_initializer='glorot_uniform',
                                  bias_initializer='zeros',
                                  padding='same', **kwargs),
-                        tfa.layers.GELU(),
                         syncbatchnorm(axis=-1,
                                     center=True,
                                     scale=True,
@@ -162,7 +161,8 @@ class enformer_performer(tf.keras.Model):
                                     momentum=self.BN_momentum,
                                     moving_mean_initializer="zeros",
                                     moving_variance_initializer="ones",
-                                    **kwargs)
+                                    **kwargs),
+                        tfa.layers.GELU()
                     ], name=name)
             else:
                 def conv_block(filters, 
@@ -187,12 +187,12 @@ class enformer_performer(tf.keras.Model):
                                  kernel_initializer='glorot_uniform',
                                  bias_initializer='zeros',
                                  padding='same', **kwargs),
-                        tfa.layers.GELU(),
                         kl.LayerNormalization(axis=-1,
                                                   scale=True,
                                                   center=True,
                                                   beta_initializer="zeros",
-                                                  gamma_initializer="ones")
+                                                  gamma_initializer="ones"),
+                        tfa.layers.GELU()
                     ], name=name)
         ### conv stack for sequence inputs
         self.stem_conv = kl.Conv1D(filters= int(self.filter_list[-1]) // 2,
