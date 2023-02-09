@@ -34,16 +34,14 @@ class enformer_performer(tf.keras.Model):
                  numerical_stabilizer=0.001,
                  attention_dropout_rate=0.10,
                  dropout_rate=0.40,
-                 post_BN_dropout_rate=0.20,
-                 BN_momentum=0.99,
+                 BN_momentum=0.90,
                  rel_pos_bins=1536,
                  use_mask_pos=False,
                  use_rot_emb=True,
                  load_init=False,
                  freeze_conv_layers=False,
                  stable_variant=True,
-                 use_enf_conv_block=True,
-                 use_LN_only=False,
+                 #use_enf_conv_block=True,
                  inits=None,
                  kernel_transformation="softmax_kernel_transformation",
                  normalize=True,
@@ -81,10 +79,10 @@ class enformer_performer(tf.keras.Model):
         self.inits=inits
         self.load_init=load_init
         self.freeze_conv_layers=freeze_conv_layers
-        self.post_BN_dropout_rate=post_BN_dropout_rate
+        #self.post_BN_dropout_rate=post_BN_dropout_rate
         self.BN_momentum=BN_momentum
-        self.use_enf_conv_block=use_enf_conv_block
-        self.use_LN_only=use_LN_only
+        #self.use_enf_conv_block=use_enf_conv_block
+        #self.use_LN_only=use_LN_only
         
         if self.load_init:
             self.filter_list= [768,896,1024,1152,1280,1536]
@@ -94,8 +92,6 @@ class enformer_performer(tf.keras.Model):
         #if self.use_enf_conv_block:
         def conv_block(filters, 
                            width=1, 
-                           w_init='lecun_normal', 
-                           b_init='zeros',
                            padding='same', 
                            name='conv_block',
                            beta_init=None,
@@ -125,9 +121,7 @@ class enformer_performer(tf.keras.Model):
                           bias_initializer=bias_init if self.load_init else "zeros",
                           trainable=train,
                           use_bias=True,
-                          padding=padding, **kwargs),
-                kl.Dropout(rate=self.post_BN_dropout_rate,
-                           **kwargs)
+                          padding=padding, **kwargs)
             ], name=name)
         """
         else:

@@ -159,27 +159,27 @@ def main():
                 'filter_list': {
                     'values': [[int(x) for x in args.filter_list.split(',')]]
                 },
-                'loss_type': {
-                    'values':[str(x) for x in args.loss_type.split(',')]
-                },
+                #'loss_type': {
+                #    'values':[str(x) for x in args.loss_type.split(',')]
+                #},
                 'heads_channels': {
                     'values':[parse_dict_input(args.heads_channels)]
                 },
-                'post_BN_dropout_rate': {
-                    'values': [float(x) for x in args.post_BN_dropout_rate.split(',')]
-                },
+                #'post_BN_dropout_rate': {
+                #    'values': [float(x) for x in args.post_BN_dropout_rate.split(',')]
+                #},
                 'BN_momentum': {
                     'values': [float(x) for x in args.BN_momentum.split(',')]
                 },
                 'optimizer': {
                     'values': [args.optimizer.lower()]
                 },
-                'use_enf_conv_block': {
-                    'values':[parse_bool_str(x) for x in args.use_enf_conv_block.split(',')]
-                },
-                'use_LN_only': {
-                    'values':[parse_bool_str(x) for x in args.use_LN_only.split(',')]
-                }
+                #'use_enf_conv_block': {
+                #    'values':[parse_bool_str(x) for x in args.use_enf_conv_block.split(',')]
+                #},
+                #'use_LN_only': {
+                #    'values':[parse_bool_str(x) for x in args.use_LN_only.split(',')]
+                #}
             }
     }
 
@@ -302,8 +302,8 @@ def main():
                                                           hidden_size=wandb.config.filter_list[-1],
                                                           numerical_stabilizer=0.001,
                                                           inits=inits,
-                                                          use_LN_only=wandb.config.use_LN_only,
-                                                          post_BN_dropout_rate=wandb.config.post_BN_dropout_rate,
+                                                          #use_LN_only=wandb.config.use_LN_only,
+                                                          #post_BN_dropout_rate=wandb.config.post_BN_dropout_rate,
                                                           BN_momentum=wandb.config.BN_momentum,
                                                           stable_variant=wandb.config.stable_variant,
                                                           dropout_rate=wandb.config.dropout_rate,
@@ -314,8 +314,8 @@ def main():
                                                           load_init=wandb.config.load_init,
                                                           freeze_conv_layers=wandb.config.freeze_conv_layers,
                                                           kernel_transformation=wandb.config.kernel_transformation,
-                                                          normalize=wandb.config.normalize,
-                                                          use_enf_conv_block=wandb.config.use_enf_conv_block)
+                                                          normalize=wandb.config.normalize)
+                                                          #use_enf_conv_block=wandb.config.use_enf_conv_block)
 
 
             checkpoint_name = wandb.config.model_save_dir + "/" + \
