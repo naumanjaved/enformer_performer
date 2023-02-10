@@ -174,6 +174,9 @@ def main():
                 'optimizer': {
                     'values': [args.optimizer.lower()]
                 },
+                'block_type': {
+                    'values': [x for x in args.block_type.split(',')]
+                }
                 #'use_enf_conv_block': {
                 #    'values':[parse_bool_str(x) for x in args.use_enf_conv_block.split(',')]
                 #},
@@ -228,16 +231,16 @@ def main():
                 
             print(wandb.config.filter_list)
             
-            run_name = '_'.join([str(wandb.config.input_length)[:3] + 'k',
+            run_name = '_'.join(['E-P-full',
+                                 str(wandb.config.block_type),
+                                 str(wandb.config.input_length)[:3] + 'k',
                                  'load_init-' + str(wandb.config.load_init),
                                  'freeze-' + str(wandb.config.freeze_conv_layers),
                                  'LR1-' + str(wandb.config.lr_base1),
                                  'LR2-' + str(wandb.config.lr_base2),
                                  'T-' + str(wandb.config.num_transformer_layers),
                                  'F-' + str(wandb.config.filter_list[-1]),
-                                 'D-' + str(wandb.config.dropout_rate),
-                                 'K-' + str(wandb.config.kernel_transformation),
-                                 'AD-' + str(wandb.config.attention_dropout_rate)])
+                                 'K-' + str(wandb.config.kernel_transformation)])
             wandb.run.name = run_name
             base_name = wandb.config.model_save_basename + "_" + run_name
 
@@ -289,7 +292,6 @@ def main():
 
             #if wandb.config.model_type == 'enformer_performer':
             import enformer_performer
-            print('loaded enformer_performer')
             model = enformer_performer.enformer_performer(num_transformer_layers=wandb.config.num_transformer_layers,
                                                           num_heads=wandb.config.num_heads,
                                                           heads_channels=wandb.config.heads_channels,
@@ -314,7 +316,8 @@ def main():
                                                           load_init=wandb.config.load_init,
                                                           freeze_conv_layers=wandb.config.freeze_conv_layers,
                                                           kernel_transformation=wandb.config.kernel_transformation,
-                                                          normalize=wandb.config.normalize)
+                                                          normalize=wandb.config.normalize,
+                                                          block_type=wandb.config.block_type)
                                                           #use_enf_conv_block=wandb.config.use_enf_conv_block)
 
 

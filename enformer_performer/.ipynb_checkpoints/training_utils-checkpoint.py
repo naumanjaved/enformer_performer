@@ -1102,6 +1102,11 @@ def parse_args(parser):
                         type=str,
                         default="adamW",
                         help= 'optimizer')
+    parser.add_argument('--block_type',
+                        dest='block_type',
+                        type=str,
+                        default="group_norm",
+                        help= 'block_type')
     args = parser.parse_args()
     return parser
 
