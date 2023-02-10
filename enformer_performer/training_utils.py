@@ -1092,11 +1092,11 @@ def parse_args(parser):
                         type=str,
                         default="True",
                         help= 'stable_variant')
-    parser.add_argument('--use_enf_conv_block',
-                        dest='use_enf_conv_block',
+    parser.add_argument('--use_max_pool',
+                        dest='use_max_pool',
                         type=str,
                         default="True",
-                        help= 'use_enf_conv_block')
+                        help= 'use_max_pool')
     parser.add_argument('--optimizer',
                         dest='optimizer',
                         type=str,

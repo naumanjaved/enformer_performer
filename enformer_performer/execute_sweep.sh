@@ -19,8 +19,8 @@ python3 train_model.py \
             --lr_base2="1.0e-04" \
             --wd_1="0.0" \
             --wd_2="0.0" \
-            --decay_frac="0.90" \
-            --gradient_clip="0.20" \
+            --decay_frac="1.0" \
+            --gradient_clip="5.0" \
             --BN_momentum="0.90" \
             --epsilon=1.0e-8 \
             --num_parallel=8 \
@@ -37,5 +37,6 @@ python3 train_model.py \
             --optimizer="adabelief" \
             --heads_channels="human:5313;mouse:1643" \
             --kernel_transformation="relu_kernel_transformation" \
-            --block_type="group_norm"
+            --block_type="enformer_nosync" \
+            --use_max_pool="True"
             

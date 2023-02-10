@@ -156,6 +156,9 @@ def main():
                 'stable_variant': {
                     'values':[parse_bool_str(x) for x in args.stable_variant.split(',')]
                 },
+                'use_max_pool': {
+                    'values':[parse_bool_str(x) for x in args.use_max_pool.split(',')]
+                },
                 'filter_list': {
                     'values': [[int(x) for x in args.filter_list.split(',')]]
                 },
