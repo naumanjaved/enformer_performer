@@ -1077,16 +1077,6 @@ def parse_args(parser):
                         type=str,
                         default="True",
                         help= 'norm')
-    parser.add_argument('--use_LN_only',
-                        dest='use_LN_only',
-                        type=str,
-                        default="True",
-                        help= 'use_LN_only')
-    parser.add_argument('--loss_type',
-                        dest='loss_type',
-                        type=str,
-                        default="poisson",
-                        help= 'loss_type')
     parser.add_argument('--stable_variant',
                         dest='stable_variant',
                         type=str,
