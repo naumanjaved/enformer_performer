@@ -237,7 +237,8 @@ def main():
                 
             print(wandb.config.filter_list)
             
-            run_name = '_'.join(['E-P-full',
+            run_name = '_'.join(['E-P-',
+                                 str(wandb.config.heads_channels['human']),
                                  str(wandb.config.block_type),
                                  str(wandb.config.input_length)[:3] + 'k',
                                  'load_init-' + str(wandb.config.load_init),
