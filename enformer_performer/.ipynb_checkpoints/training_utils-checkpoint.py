@@ -416,7 +416,7 @@ def return_train_val_functions(model,
     def dist_val_step_TSS(iterator): #input_batch, model, optimizer, organism, gradient_clip):
         @tf.function(jit_compile=True)
         def val_step(inputs):
-            target = inputs['target'][:,:,2058:]
+            target = inputs['target'][:,:,cage_start_index:]
 
             sequence=tf.cast(inputs['sequence'], dtype=tf.float32)
 
