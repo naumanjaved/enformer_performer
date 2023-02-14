@@ -96,6 +96,9 @@ def main():
                 'output_length': {
                     'values': [args.output_length]
                 },
+                'crop_size': {
+                    'values': [args.crop_size]
+                },
                 'dropout_rate': {
                     'values': [float(x) for x in args.dropout_rate.split(',')]
                 },
@@ -244,7 +247,9 @@ def main():
                                  'T-' + str(wandb.config.num_transformer_layers),
                                  'F-' + str(wandb.config.filter_list[-1]),
                                  'K-' + str(wandb.config.kernel_transformation)])
-            wandb.run.name = run_name
+            date_string = f'{datetime.now():%Y-%m-%d %H:%M:%S%z}'
+            date_string = date_string.replace(' ','_')
+            wandb.run.name = run_name + "_" + date_string
             base_name = wandb.config.model_save_basename + "_" + run_name
 
             '''
@@ -267,8 +272,10 @@ def main():
             
             organism_dict = parse_dict_input_tuple(args.num_examples_dict,
                                                    GLOBAL_BATCH_SIZE)
-
-            wandb.config.update({"total_steps" : (organism_dict['human'][0] + organism_dict['mouse'][1]) // GLOBAL_BATCH_SIZE},
+            #print(organism_dict)
+            total_train_steps = organism_dict['human'][0] * len(organism_dict.keys())
+            #print(total_train_steps)
+            wandb.config.update({"total_steps" : total_train_steps // GLOBAL_BATCH_SIZE},
                                 allow_val_change=True)
             wandb.config.update({"val_steps_TSS": args.val_examples_TSS // GLOBAL_BATCH_SIZE},
                                 allow_val_change=True)
@@ -281,15 +288,31 @@ def main():
             tr_data_it_dict,val_data_it_dict,val_data_TSS_it= \
                     training_utils.return_distributed_iterators(iterators,
                                                                 wandb.config.gcs_path_TSS,
+                                                                wandb.config.heads_channels['human'],
                                                                 GLOBAL_BATCH_SIZE,
                                                                 wandb.config.input_length,
+                                                                wandb.config.output_length,
+                                                                wandb.config.crop_size,
                                                                 wandb.config.max_shift,
                                                                 args.num_parallel,
                                                                 args.num_epochs,
                                                                 strategy,
                                                                 options,
                                                                 g)
-
+            
+            iters = []
+            iters.append(tr_data_it_dict['human'])
+            if 'mouse' in iterators.keys():
+                iters.append(tr_data_it_dict['mouse'])
+            if 'rhesus' in iterators.keys():
+                iters.append(tr_data_it_dict['rhesus'])
+            if 'rat' in iterators.keys():
+                iters.append(tr_data_it_dict['rat'])
+            if 'canine' in iterators.keys():
+                iters.append(tr_data_it_dict['canine'])
+            iters = tuple(iters)
+            print(iters)
+                
 
             print('created dataset iterators')
 
@@ -393,14 +416,24 @@ def main():
             
 
             metric_dict = {}
+            
+            
+            if wandb.config.heads_channels['human'] == 5313:
+                cage_start_index = 4675
+            elif wandb.config.heads_channels['human'] == 2696:
+                cage_start_index = 2058
+            else:
+                ValueError('ensure you have properly set cage start index')
 
             dist_train_step,val_step_h,val_step_m,val_step_TSS,build_step, metric_dict = \
-                            training_utils.return_train_val_functions(model,
+                            training_utils.return_train_val_functions_all_org(model,
                                                                       organism_dict['human'][0],
-                                                                      organism_dict['human'][1],
-                                                                      organism_dict['mouse'][1],
+                                                                      organism_dict,
+                                                                              organism_dict['human'][1],
+                                                                              organism_dict['mouse'][1],
                                                                       wandb.config.val_steps_TSS,
                                                                       optimizers_in,
+                                                                      cage_start_index,
                                                                       strategy,
                                                                       metric_dict,
                                                                       GLOBAL_BATCH_SIZE,
@@ -431,8 +464,7 @@ def main():
                 print('starting epoch_', str(epoch_i))
                 start = time.time()
                 
-                dist_train_step(tr_data_it_dict['human'],
-                                tr_data_it_dict['mouse'])
+                dist_train_step(iters)
                 #for organism in organism_dict.keys():
                     
                     #train_step_dict[organism](tr_data_it_dict[organism])
@@ -452,7 +484,7 @@ def main():
                 val_step_h(val_data_it_dict['human'])
                 val_step_m(val_data_it_dict['mouse'])
                 
-                for organism in organism_dict.keys():
+                for organism in ['human','mouse']:
                     wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
                               step=epoch_i)
                     pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()

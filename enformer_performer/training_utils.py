@@ -255,10 +255,10 @@ def extract_batch_norm_stats(model):
 
 def return_train_val_functions(model,
                                train_steps_human,
-                               val_steps_human,
-                               val_steps_mouse,
+                               organism_dict,
                                val_steps_TSS,
                                optimizers_in,
+                               cage_start_index,
                                strategy,
                                metric_dict,
                                global_batch_size,
@@ -284,18 +284,27 @@ def return_train_val_functions(model,
     metric_dict['human_pearsonsR'] = metrics.MetricDict({'PearsonR': metrics.PearsonR(reduce_axis=(0,1))})
     metric_dict['human_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
     
-    metric_dict["mm_corr_stats"] = metrics.correlation_stats_gene_centered(name='mm_corr_stats')
-    metric_dict["mouse_tr"] = tf.keras.metrics.Mean("mouse_tr_loss",
-                                                 dtype=tf.float32)
-    metric_dict["mouse_val"] = tf.keras.metrics.Mean("mouse_val_loss",
-                                                  dtype=tf.float32)
-    metric_dict['mouse_pearsonsR'] = metrics.MetricDict({'PearsonR': metrics.PearsonR(reduce_axis=(0,1))})
-    metric_dict['mouse_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
+    for organism in organism_dict.keys():
+        if organism == 'human':
+            continue
+        
+        metric_dict[organism + "_tr"] = tf.keras.metrics.Mean(organism + "_tr_loss",
+                                                     dtype=tf.float32)
+        metric_dict[organism + "_val"] = tf.keras.metrics.Mean(organism + "_val_loss",
+                                                      dtype=tf.float32)
+        metric_dict[organism + '_pearsonsR'] = metrics.MetricDict({'PearsonR': metrics.PearsonR(reduce_axis=(0,1))})
+        metric_dict[organism + '_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
 
     #train_steps, val_steps = steps_tuple
 
     
-    def dist_train_step(iter_human,iter_mouse):    
+    def dist_train_step(iters):
+        iter_human = iters[0]
+        # iter_mouse = iters[1]
+        # iter_rhesus = iters[2]
+        # iter_rat = iters[3]
+        # iter_canine = iters[4]
+        
         @tf.function(jit_compile=True)
         def train_step_h(inputs):
             sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
@@ -358,11 +367,114 @@ def return_train_val_functions(model,
                                            remaining_vars))
             metric_dict["mouse_tr"].update_state(loss)
             
+        @tf.function(jit_compile=True)
+        def train_step_rh(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                conv_vars = model.stem_conv.trainable_variables + \
+                            model.stem_res_conv.trainable_variables + \
+                            model.stem_pool.trainable_variables + \
+                            model.conv_tower.trainable_variables
+                remaining_vars = model.performer.trainable_variables + \
+                                    model.final_pointwise_conv.trainable_variables + \
+                                    model.heads.trainable_variables
+                vars_all = conv_vars + remaining_vars
+                for var in vars_all:
+                    tape.watch(var)
+                output = model(sequence,
+                               training=True)["rhesus"]
+
+                output = tf.cast(output,dtype=tf.float32)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            gradients = tape.gradient(loss, vars_all)
+            gradients, _ = tf.clip_by_global_norm(gradients, 
+                                                  gradient_clip)
+            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
+                                           conv_vars))
+            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
+                                           remaining_vars))
+            metric_dict["rhesus_tr"].update_state(loss)
+            
+        @tf.function(jit_compile=True)
+        def train_step_rat(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                conv_vars = model.stem_conv.trainable_variables + \
+                            model.stem_res_conv.trainable_variables + \
+                            model.stem_pool.trainable_variables + \
+                            model.conv_tower.trainable_variables
+                remaining_vars = model.performer.trainable_variables + \
+                                    model.final_pointwise_conv.trainable_variables + \
+                                    model.heads.trainable_variables
+                vars_all = conv_vars + remaining_vars
+                for var in vars_all:
+                    tape.watch(var)
+                output = model(sequence,
+                               training=True)["rat"]
+
+                output = tf.cast(output,dtype=tf.float32)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            gradients = tape.gradient(loss, vars_all)
+            gradients, _ = tf.clip_by_global_norm(gradients, 
+                                                  gradient_clip)
+            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
+                                           conv_vars))
+            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
+                                           remaining_vars))
+            metric_dict["rat_tr"].update_state(loss)
+            
+        @tf.function(jit_compile=True)
+        def train_step_canine(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                conv_vars = model.stem_conv.trainable_variables + \
+                            model.stem_res_conv.trainable_variables + \
+                            model.stem_pool.trainable_variables + \
+                            model.conv_tower.trainable_variables
+                remaining_vars = model.performer.trainable_variables + \
+                                    model.final_pointwise_conv.trainable_variables + \
+                                    model.heads.trainable_variables
+                vars_all = conv_vars + remaining_vars
+                for var in vars_all:
+                    tape.watch(var)
+                output = model(sequence,
+                               training=True)["canine"]
+
+                output = tf.cast(output,dtype=tf.float32)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            gradients = tape.gradient(loss, vars_all)
+            gradients, _ = tf.clip_by_global_norm(gradients, 
+                                                  gradient_clip)
+            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
+                                           conv_vars))
+            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
+                                           remaining_vars))
+            metric_dict["canine_tr"].update_state(loss)
+            
         for _ in tf.range(train_steps_human):
             strategy.run(train_step_h,
                          args=(next(iter_human),))
-            strategy.run(train_step_m,
-                         args=(next(iter_mouse),))
+            if 'mouse' in organism_dict.keys():
+                strategy.run(train_step_m,
+                             args=(next(iters[1]),))
+            if 'rhesus' in organism_dict.keys():
+                strategy.run(train_step_rh,
+                             args=(next(iters[2]),))
+            if 'rat' in organism_dict.keys():
+                strategy.run(train_step_rat,
+                             args=(next(iters[3]),))
+            if 'canine' in organism_dict.keys():
+                strategy.run(train_step_canine,
+                             args=(next(iters[4]),))
 
     def dist_val_step_h(iterator):
         @tf.function(jit_compile=True)
@@ -378,7 +490,7 @@ def return_train_val_functions(model,
             metric_dict["human_val"].update_state(loss)
             metric_dict['human_pearsonsR'].update_state(target, output)
             metric_dict['human_R2'].update_state(target, output)
-        for _ in tf.range(val_steps_human): ## for loop within @tf.fuction for improved TPU performance
+        for _ in tf.range(organism_dict['human'][0]): ## for loop within @tf.fuction for improved TPU performance
             strategy.run(val_step,
                          args=(next(iterator),))
         
@@ -396,7 +508,7 @@ def return_train_val_functions(model,
             metric_dict["mouse_val"].update_state(loss)
             metric_dict['mouse_pearsonsR'].update_state(target, output)
             metric_dict['mouse_R2'].update_state(target, output)
-        for _ in tf.range(val_steps_mouse): ## for loop within @tf.fuction for improved TPU performance
+        for _ in tf.range(organism_dict['mouse'][0]): ## for loop within @tf.fuction for improved TPU performance
             strategy.run(val_step,
                          args=(next(iterator),))
             
@@ -404,7 +516,7 @@ def return_train_val_functions(model,
     def dist_val_step_TSS(iterator): #input_batch, model, optimizer, organism, gradient_clip):
         @tf.function(jit_compile=True)
         def val_step(inputs):
-            target = inputs['target'][:,:,4675:]
+            target = inputs['target'][:,:,2058:]
 
             sequence=tf.cast(inputs['sequence'], dtype=tf.float32)
 
@@ -412,7 +524,7 @@ def return_train_val_functions(model,
             gene_name = inputs['gene_name']
 
             cell_types = inputs['cell_types']
-            output = model(sequence,training=False)['human'][:,:,4675:]
+            output = model(sequence,training=False)['human'][:,:,cage_start_index:]
             
             pred = tf.reduce_sum(tf.cast(output,dtype=tf.float32) * tss_mask,axis=1)
             true = tf.reduce_sum(tf.cast(target,dtype=tf.float32) * tss_mask,axis=1)
@@ -465,7 +577,332 @@ def return_train_val_functions(model,
             build_step, metric_dict
 
 
-def deserialize_tr(serialized_example,input_length,max_shift, num_targets,g):
+def return_train_val_functions_all_org(model,
+                                   train_steps_human,
+                                   organism_dict,
+                                       val_steps_h,
+                                       val_steps_m,
+                                   val_steps_TSS,
+                                   optimizers_in,
+                                   cage_start_index,
+                                   strategy,
+                                   metric_dict,
+                                   global_batch_size,
+                                   gradient_clip,
+                                   batch_size_per_rep,
+                                   loss_fn_main='poisson'):
+    
+    
+    if loss_fn_main == 'mse':
+        loss_fn = tf.keras.losses.MeanSquaredError(reduction=tf.keras.losses.Reduction.NONE)
+    elif loss_fn_main == 'poisson':
+        loss_fn = tf.keras.losses.Poisson(reduction=tf.keras.losses.Reduction.NONE)
+    else:
+        raise ValueError('loss_fn_not_implemented')
+
+    optimizer1,optimizer2=optimizers_in
+    
+    metric_dict["hg_corr_stats"] = metrics.correlation_stats_gene_centered(name='hg_corr_stats')
+    metric_dict["human_tr"] = tf.keras.metrics.Mean("human_tr_loss",
+                                                 dtype=tf.float32)
+    metric_dict["human_val"] = tf.keras.metrics.Mean("human_val_loss",
+                                                  dtype=tf.float32)
+    metric_dict['human_pearsonsR'] = metrics.MetricDict({'PearsonR': metrics.PearsonR(reduce_axis=(0,1))})
+    metric_dict['human_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
+    
+    for organism in organism_dict.keys():
+        if organism == 'human':
+            continue
+        
+        metric_dict[organism + "_tr"] = tf.keras.metrics.Mean(organism + "_tr_loss",
+                                                     dtype=tf.float32)
+        metric_dict[organism + "_val"] = tf.keras.metrics.Mean(organism + "_val_loss",
+                                                      dtype=tf.float32)
+        metric_dict[organism + '_pearsonsR'] = metrics.MetricDict({'PearsonR': metrics.PearsonR(reduce_axis=(0,1))})
+        metric_dict[organism + '_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
+
+    #train_steps, val_steps = steps_tuple
+
+    
+    def dist_train_step(iters):
+        iter_human = iters[0]
+        # iter_mouse = iters[1]
+        # iter_rhesus = iters[2]
+        # iter_rat = iters[3]
+        # iter_canine = iters[4]
+        
+        @tf.function(jit_compile=True)
+        def train_step_h(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                conv_vars = model.stem_conv.trainable_variables + \
+                            model.stem_res_conv.trainable_variables + \
+                            model.stem_pool.trainable_variables + \
+                            model.conv_tower.trainable_variables
+                remaining_vars = model.performer.trainable_variables + \
+                                    model.final_pointwise_conv.trainable_variables + \
+                                    model.heads.trainable_variables
+                vars_all = conv_vars + remaining_vars
+                for var in vars_all:
+                    tape.watch(var)
+                output = model(sequence,
+                               training=True)['human']
+
+                output = tf.cast(output,dtype=tf.float32)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            gradients = tape.gradient(loss, vars_all)
+            gradients, _ = tf.clip_by_global_norm(gradients, 
+                                                  gradient_clip)
+            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
+                                           conv_vars))
+            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
+                                           remaining_vars))
+            metric_dict["human_tr"].update_state(loss)
+            
+        @tf.function(jit_compile=True)
+        def train_step_m(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                conv_vars = model.stem_conv.trainable_variables + \
+                            model.stem_res_conv.trainable_variables + \
+                            model.stem_pool.trainable_variables + \
+                            model.conv_tower.trainable_variables
+                remaining_vars = model.performer.trainable_variables + \
+                                    model.final_pointwise_conv.trainable_variables + \
+                                    model.heads.trainable_variables
+                vars_all = conv_vars + remaining_vars
+                for var in vars_all:
+                    tape.watch(var)
+                output = model(sequence,
+                               training=True)["mouse"]
+
+                output = tf.cast(output,dtype=tf.float32)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            gradients = tape.gradient(loss, vars_all)
+            gradients, _ = tf.clip_by_global_norm(gradients, 
+                                                  gradient_clip)
+            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
+                                           conv_vars))
+            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
+                                           remaining_vars))
+            metric_dict["mouse_tr"].update_state(loss)
+            
+        @tf.function(jit_compile=True)
+        def train_step_rh(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                conv_vars = model.stem_conv.trainable_variables + \
+                            model.stem_res_conv.trainable_variables + \
+                            model.stem_pool.trainable_variables + \
+                            model.conv_tower.trainable_variables
+                remaining_vars = model.performer.trainable_variables + \
+                                    model.final_pointwise_conv.trainable_variables + \
+                                    model.heads.trainable_variables
+                vars_all = conv_vars + remaining_vars
+                for var in vars_all:
+                    tape.watch(var)
+                output = model(sequence,
+                               training=True)["rhesus"]
+
+                output = tf.cast(output,dtype=tf.float32)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            gradients = tape.gradient(loss, vars_all)
+            gradients, _ = tf.clip_by_global_norm(gradients, 
+                                                  gradient_clip)
+            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
+                                           conv_vars))
+            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
+                                           remaining_vars))
+            metric_dict["rhesus_tr"].update_state(loss)
+            
+        @tf.function(jit_compile=True)
+        def train_step_rat(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                conv_vars = model.stem_conv.trainable_variables + \
+                            model.stem_res_conv.trainable_variables + \
+                            model.stem_pool.trainable_variables + \
+                            model.conv_tower.trainable_variables
+                remaining_vars = model.performer.trainable_variables + \
+                                    model.final_pointwise_conv.trainable_variables + \
+                                    model.heads.trainable_variables
+                vars_all = conv_vars + remaining_vars
+                for var in vars_all:
+                    tape.watch(var)
+                output = model(sequence,
+                               training=True)["rat"]
+
+                output = tf.cast(output,dtype=tf.float32)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            gradients = tape.gradient(loss, vars_all)
+            gradients, _ = tf.clip_by_global_norm(gradients, 
+                                                  gradient_clip)
+            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
+                                           conv_vars))
+            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
+                                           remaining_vars))
+            metric_dict["rat_tr"].update_state(loss)
+            
+        @tf.function(jit_compile=True)
+        def train_step_canine(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                conv_vars = model.stem_conv.trainable_variables + \
+                            model.stem_res_conv.trainable_variables + \
+                            model.stem_pool.trainable_variables + \
+                            model.conv_tower.trainable_variables
+                remaining_vars = model.performer.trainable_variables + \
+                                    model.final_pointwise_conv.trainable_variables + \
+                                    model.heads.trainable_variables
+                vars_all = conv_vars + remaining_vars
+                for var in vars_all:
+                    tape.watch(var)
+                output = model(sequence,
+                               training=True)["canine"]
+
+                output = tf.cast(output,dtype=tf.float32)
+                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            gradients = tape.gradient(loss, vars_all)
+            gradients, _ = tf.clip_by_global_norm(gradients, 
+                                                  gradient_clip)
+            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
+                                           conv_vars))
+            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
+                                           remaining_vars))
+            metric_dict["canine_tr"].update_state(loss)
+            
+        for _ in tf.range(train_steps_human):
+            strategy.run(train_step_h,
+                         args=(next(iter_human),))
+            strategy.run(train_step_m,
+                         args=(next(iters[1]),))
+            strategy.run(train_step_rh,
+                     args=(next(iters[2]),))
+            strategy.run(train_step_rat,
+                     args=(next(iters[3]),))
+            strategy.run(train_step_canine,
+                         args=(next(iters[4]),))
+
+    def dist_val_step_h(iterator):
+        @tf.function(jit_compile=True)
+        def val_step(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            output = model(sequence,
+                           training=False)['human']
+            output = tf.cast(output,dtype=tf.float32)
+            loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            metric_dict["human_val"].update_state(loss)
+            metric_dict['human_pearsonsR'].update_state(target, output)
+            metric_dict['human_R2'].update_state(target, output)
+        for _ in tf.range(val_steps_h): ## for loop within @tf.fuction for improved TPU performance
+            strategy.run(val_step,
+                         args=(next(iterator),))
+        
+    def dist_val_step_m(iterator):
+        @tf.function(jit_compile=True)
+        def val_step(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            target=tf.cast(inputs['target'],dtype=tf.float32)
+
+            output = model(sequence,
+                           training=False)['mouse']
+            output = tf.cast(output,dtype=tf.float32)
+            loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
+
+            metric_dict["mouse_val"].update_state(loss)
+            metric_dict['mouse_pearsonsR'].update_state(target, output)
+            metric_dict['mouse_R2'].update_state(target, output)
+        for _ in tf.range(val_steps_m): ## for loop within @tf.fuction for improved TPU performance
+            strategy.run(val_step,
+                         args=(next(iterator),))
+            
+                
+    def dist_val_step_TSS(iterator): #input_batch, model, optimizer, organism, gradient_clip):
+        @tf.function(jit_compile=True)
+        def val_step(inputs):
+            target = inputs['target'][:,:,2058:]
+
+            sequence=tf.cast(inputs['sequence'], dtype=tf.float32)
+
+            tss_mask = tf.cast(inputs['tss_mask'],dtype=tf.float32)
+            gene_name = inputs['gene_name']
+
+            cell_types = inputs['cell_types']
+            output = model(sequence,training=False)['human'][:,:,2058:]
+            
+            pred = tf.reduce_sum(tf.cast(output,dtype=tf.float32) * tss_mask,axis=1)
+            true = tf.reduce_sum(tf.cast(target,dtype=tf.float32) * tss_mask,axis=1)
+            
+            return pred,true,gene_name,cell_types
+
+
+        ta_pred = tf.TensorArray(tf.float32, size=0, dynamic_size=True) # tensor array to store preds
+        ta_true = tf.TensorArray(tf.float32, size=0, dynamic_size=True) # tensor array to store vals
+        ta_celltype = tf.TensorArray(tf.int32, size=0, dynamic_size=True) # tensor array to store preds
+        ta_genemap = tf.TensorArray(tf.int32, size=0, dynamic_size=True)        
+
+        for _ in tf.range(val_steps_TSS): ## for loop within @tf.fuction for improved TPU performance
+
+            pred_rep, true_rep, gene_rep, cell_type_rep = strategy.run(val_step,
+                                                                       args=(next(iterator),))
+            
+            pred_reshape = tf.reshape(strategy.gather(pred_rep, axis=0), [-1]) # reshape to 1D
+            true_reshape = tf.reshape(strategy.gather(true_rep, axis=0), [-1])
+            cell_type_reshape = tf.reshape(strategy.gather(cell_type_rep, axis=0), [-1])
+            gene_map_reshape = tf.reshape(strategy.gather(gene_rep, axis=0), [-1])
+            
+            ta_pred = ta_pred.write(_, pred_reshape)
+            ta_true = ta_true.write(_, true_reshape)
+            ta_celltype = ta_celltype.write(_, cell_type_reshape)
+            ta_genemap = ta_genemap.write(_, gene_map_reshape)
+        metric_dict["hg_corr_stats"].update_state(ta_true.concat(),
+                                                  ta_pred.concat(),
+                                                  ta_celltype.concat(),
+                                                  ta_genemap.concat())
+        ta_true.close()
+        ta_pred.close()
+        ta_celltype.close()
+        ta_genemap.close()
+
+    def build_step(iterator): #input_batch, model, optimizer, organism, gradient_clip):
+        @tf.function(jit_compile=True)
+        def val_step(inputs):
+            target=tf.cast(inputs['target'],
+                           dtype = tf.float32)
+            sequence=tf.cast(inputs['sequence'],
+                             dtype=tf.float32)
+            output = model(sequence, training=False)['human']
+
+        for _ in tf.range(1): ## for loop within @tf.fuction for improved TPU performance
+            strategy.run(val_step, args=(next(iterator),))
+    
+
+    return dist_train_step,dist_val_step_h,dist_val_step_m,dist_val_step_TSS,\
+            build_step, metric_dict
+
+
+def deserialize_tr(serialized_example, 
+                   input_length,
+                   output_length,crop_size,
+                   max_shift, num_targets,g):
     """Deserialize bytes stored in TFRecordFile."""
     feature_map = {
       'sequence': tf.io.FixedLenFeature([], tf.string),
@@ -498,21 +935,27 @@ def deserialize_tr(serialized_example,input_length,max_shift, num_targets,g):
     
     target = tf.io.decode_raw(example['target'], tf.float16)
     target = tf.reshape(target,
-                        (896, num_targets))
+                        (output_length, num_targets))
+    #print(target.shape)
+    target = tf.slice(target,[crop_size,0],
+                             [output_length - 2*crop_size,-1])
     
     if rev_comp == 1:
         sequence = tf.gather(sequence, [3, 2, 1, 0], axis=-1)
         sequence = tf.reverse(sequence, axis=[0])
         target = tf.reverse(target,axis=[0])
-    
+        
+
     return {'sequence': tf.ensure_shape(sequence,
                                         [input_length,4]),
             'target': tf.ensure_shape(target,
-                                      [896,num_targets])}
+                                      [output_length - 2*crop_size,num_targets])}
                     
 
 
-def deserialize_val(serialized_example,input_length,max_shift, num_targets):
+def deserialize_val(serialized_example,
+                    input_length, output_length,crop_size,
+                    max_shift, num_targets):
     """Deserialize bytes stored in TFRecordFile."""
     feature_map = {
       'sequence': tf.io.FixedLenFeature([], tf.string),
@@ -536,16 +979,20 @@ def deserialize_val(serialized_example,input_length,max_shift, num_targets):
     
     target = tf.io.decode_raw(example['target'], tf.float16)
     target = tf.reshape(target,
-                        (896, num_targets))
+                        (output_length, num_targets))
+    target = tf.slice(target,[crop_size,0],
+                             [output_length-2*crop_size,-1])
     
     
     return {'sequence': tf.ensure_shape(sequence,
                                         [input_length,4]),
             'target': tf.ensure_shape(target,
-                                      [896,num_targets])}
+                                      [output_length-2*crop_size,num_targets])}
 
 
-def deserialize_val_TSS(serialized_example,input_length,max_shift,num_targets):
+def deserialize_val_TSS(serialized_example,
+                        input_length, output_length,crop_size,
+                        max_shift,num_targets):
     """Deserialize bytes stored in TFRecordFile."""
     feature_map = {
         'sequence': tf.io.FixedLenFeature([], tf.string),
@@ -558,8 +1005,10 @@ def deserialize_val_TSS(serialized_example,input_length,max_shift,num_targets):
     input_seq_length = input_length + max_shift
     interval_end = input_length + shift
     
-    ### rev_comp
-    #rev_comp = random.randrange(0,2)
+    print(input_length)
+    print(output_length)
+    print(crop_size)
+    print(num_targets)
 
     example = tf.io.parse_example(serialized_example, feature_map)
     sequence = tf.io.decode_raw(example['sequence'], tf.bool)
@@ -569,22 +1018,27 @@ def deserialize_val_TSS(serialized_example,input_length,max_shift,num_targets):
     
     target = tf.io.decode_raw(example['target'], tf.float16)
     target = tf.reshape(target,
-                        (896, num_targets))
-    
+                        (output_length, num_targets))
+    #print(target.shape)
+    target = tf.slice(target,[crop_size,0],
+                             [output_length - 2*crop_size,-1])
+
     tss_mask = tf.io.parse_tensor(example['tss_mask'],
                                   out_type=tf.int32)
+    tss_mask = tf.slice(tss_mask,[crop_size,0],
+                             [output_length - 2*crop_size,-1])
 
-    
     gene_name= tf.io.parse_tensor(example['gene_name'],out_type=tf.int32)
     gene_name = tf.tile(tf.expand_dims(gene_name,axis=0),[638])
     cell_types = tf.range(0,638)
     
+
     return {'sequence': tf.ensure_shape(sequence,
                                         [input_length,4]),
             'target': tf.ensure_shape(target,
-                                      [896,num_targets]),
+                                      [output_length - 2*crop_size,num_targets]),
             'tss_mask': tf.ensure_shape(tss_mask,
-                                        [896,1]),
+                                        [output_length - 2*crop_size,1]),
             'gene_name': tf.ensure_shape(gene_name,
                                          [638,]),
             'cell_types': tf.ensure_shape(cell_types,
@@ -596,6 +1050,8 @@ def return_dataset(gcs_path,
                    tss_bool,
                    batch,
                    input_length,
+                   output_length,
+                   crop_size,
                    max_shift,
                    num_targets,
                    options,
@@ -606,6 +1062,7 @@ def return_dataset(gcs_path,
     return a tf dataset object for given gcs path
     """
     wc = str(split) + "*.tfr"
+
     if not tss_bool:
         list_files = (tf.io.gfile.glob(os.path.join(gcs_path,
                                                     organism,
@@ -614,7 +1071,7 @@ def return_dataset(gcs_path,
     else:
         list_files = (tf.io.gfile.glob(os.path.join(gcs_path,
                                                     wc)))
-    #print(list_files)
+
     random.shuffle(list_files)
     files = tf.data.Dataset.list_files(list_files,shuffle=True)
     
@@ -627,7 +1084,9 @@ def return_dataset(gcs_path,
         #if g is None:
         
         dataset = dataset.map(lambda record: deserialize_tr(record,
-                                                            input_length,
+                                                            input_length, 
+                                                            output_length,
+                                                            crop_size,
                                                             max_shift,
                                                             num_targets,
                                                             g),
@@ -637,15 +1096,19 @@ def return_dataset(gcs_path,
     else:
         if not tss_bool:
             dataset = dataset.map(lambda record: deserialize_val(record,
-                                                             input_length,
-                                                             max_shift,
-                                                             num_targets),
+                                                                 input_length,
+                                                                 output_length,
+                                                                 crop_size,
+                                                                 max_shift,
+                                                                 num_targets),
                                   deterministic=False,
                                   num_parallel_calls=num_parallel)
         else:
-            #print(list_files)
+
             dataset = dataset.map(lambda record: deserialize_val_TSS(record,
-                                                             input_length,
+                                                                     input_length, 
+                                                            output_length,
+                                                            crop_size,
                                                              max_shift,
                                                              num_targets),
                                   deterministic=False,
@@ -657,8 +1120,11 @@ def return_dataset(gcs_path,
 
 def return_distributed_iterators(gcs_paths_dict,
                                  gcs_path_tss,
+                                 num_targets_human,
                                  global_batch_size,
                                  input_length,
+                                 output_length,
+                                 crop_size,
                                  max_shift,
                                  num_parallel_calls,
                                  num_epoch,
@@ -675,12 +1141,24 @@ def return_distributed_iterators(gcs_paths_dict,
     valid_iters={}
     for organism,organism_info in gcs_paths_dict.items():
         gcs_path,num_targets=organism_info
+        
+        if organism in ['human','mouse']:
+            output_length_p = 896
+            crop_size_p = 0
+        else:
+            output_length_p = output_length
+            crop_size_p = crop_size
+            
+        
+
         tr_data = return_dataset(gcs_path,
                                  organism,
                                  "train",
                                  False,
                                  global_batch_size,
                                  input_length,
+                                 output_length_p,
+                                 crop_size_p,
                                  max_shift,
                                  num_targets,
                                  options,
@@ -688,13 +1166,14 @@ def return_distributed_iterators(gcs_paths_dict,
                                  num_epoch,
                                  g)
 
-
         val_data = return_dataset(gcs_path,
                                   organism,
                                  "valid",
                                   False,
                                  global_batch_size,
                                  input_length,
+                                  output_length_p,
+                                  crop_size_p,
                                  max_shift,
                                  num_targets,
                                  options,
@@ -711,6 +1190,8 @@ def return_distributed_iterators(gcs_paths_dict,
 
         train_iters[organism]=tr_data_it
         valid_iters[organism]=val_data_it
+        
+
 
     val_data_TSS = return_dataset(gcs_path_tss,
                                   "human",
@@ -718,8 +1199,10 @@ def return_distributed_iterators(gcs_paths_dict,
                                  True,
                                  global_batch_size,
                                  input_length,
+                                  896,
+                                  0,
                                  max_shift,
-                                 5313,
+                                 num_targets_human,
                                  options,
                                  num_parallel_calls,
                                  num_epoch,
@@ -978,6 +1461,11 @@ def parse_args(parser):
                         type=int,
                         default=1536,
                         help= 'output_length')
+    parser.add_argument('--crop_size',
+                        dest='crop_size',
+                        type=int,
+                        default=320,
+                        help= 'crop_size')
     parser.add_argument('--num_transformer_layers',
                         dest='num_transformer_layers',
                         type=str,
