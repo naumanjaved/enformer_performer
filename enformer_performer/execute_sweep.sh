@@ -16,7 +16,7 @@ python3 train_model.py \
             --model_save_dir="gs://picard-testing-176520/enformer_performer/models" \
             --model_save_basename="enformer_performer_230214" \
             --lr_base1="2.5e-06" \
-            --lr_base2="1.0e-04" \
+            --lr_base2="8.0e-05" \
             --wd_1="0.0" \
             --wd_2="0.0" \
             --decay_frac="0.75" \

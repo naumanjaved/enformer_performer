@@ -276,11 +276,14 @@ def main():
             #print(organism_dict)
             total_train_steps = organism_dict['human'][0] * len(organism_dict.keys())
             #print(total_train_steps)
-            wandb.config.update({"total_steps" : total_train_steps // GLOBAL_BATCH_SIZE},
+            wandb.config.update({"total_steps" : total_train_steps},
                                 allow_val_change=True)
             wandb.config.update({"val_steps_TSS": args.val_examples_TSS // GLOBAL_BATCH_SIZE},
                                 allow_val_change=True)
             
+            print(organism_dict)
+            print(wandb.config.total_steps)
+            exit()
             
             iterators = {}
             for key,val in wandb.config.heads_channels.items():
@@ -429,6 +432,8 @@ def main():
             else:
                 ValueError('ensure you have properly set cage start index')
 
+
+                
             dist_train_step,val_step_h,val_step_m,val_step_TSS,build_step, metric_dict = \
                             training_utils.return_train_val_functions(model,
                                                                       organism_dict['human'][0],
