@@ -577,7 +577,7 @@ def return_train_val_functions(model,
             build_step, metric_dict
 
 
-def return_train_val_functions_all_org(model,
+def return_train_val_functions_3(model,
                                    train_steps_human,
                                    organism_dict,
                                        val_steps_h,
@@ -723,68 +723,7 @@ def return_train_val_functions_all_org(model,
             optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
                                            remaining_vars))
             metric_dict["rhesus_tr"].update_state(loss)
-            
-        @tf.function(jit_compile=True)
-        def train_step_rat(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
 
-            with tf.GradientTape(watch_accessed_variables=False) as tape:
-                conv_vars = model.stem_conv.trainable_variables + \
-                            model.stem_res_conv.trainable_variables + \
-                            model.stem_pool.trainable_variables + \
-                            model.conv_tower.trainable_variables
-                remaining_vars = model.performer.trainable_variables + \
-                                    model.final_pointwise_conv.trainable_variables + \
-                                    model.heads.trainable_variables
-                vars_all = conv_vars + remaining_vars
-                for var in vars_all:
-                    tape.watch(var)
-                output = model(sequence,
-                               training=True)["rat"]
-
-                output = tf.cast(output,dtype=tf.float32)
-                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            gradients = tape.gradient(loss, vars_all)
-            gradients, _ = tf.clip_by_global_norm(gradients, 
-                                                  gradient_clip)
-            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
-                                           conv_vars))
-            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
-                                           remaining_vars))
-            metric_dict["rat_tr"].update_state(loss)
-            
-        @tf.function(jit_compile=True)
-        def train_step_canine(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
-
-            with tf.GradientTape(watch_accessed_variables=False) as tape:
-                conv_vars = model.stem_conv.trainable_variables + \
-                            model.stem_res_conv.trainable_variables + \
-                            model.stem_pool.trainable_variables + \
-                            model.conv_tower.trainable_variables
-                remaining_vars = model.performer.trainable_variables + \
-                                    model.final_pointwise_conv.trainable_variables + \
-                                    model.heads.trainable_variables
-                vars_all = conv_vars + remaining_vars
-                for var in vars_all:
-                    tape.watch(var)
-                output = model(sequence,
-                               training=True)["canine"]
-
-                output = tf.cast(output,dtype=tf.float32)
-                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            gradients = tape.gradient(loss, vars_all)
-            gradients, _ = tf.clip_by_global_norm(gradients, 
-                                                  gradient_clip)
-            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
-                                           conv_vars))
-            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
-                                           remaining_vars))
-            metric_dict["canine_tr"].update_state(loss)
             
         for _ in tf.range(train_steps_human):
             strategy.run(train_step_h,
@@ -793,10 +732,6 @@ def return_train_val_functions_all_org(model,
                          args=(next(iters[1]),))
             strategy.run(train_step_rh,
                      args=(next(iters[2]),))
-            strategy.run(train_step_rat,
-                     args=(next(iters[3]),))
-            strategy.run(train_step_canine,
-                         args=(next(iters[4]),))
 
     def dist_val_step_h(iterator):
         @tf.function(jit_compile=True)
@@ -1005,10 +940,6 @@ def deserialize_val_TSS(serialized_example,
     input_seq_length = input_length + max_shift
     interval_end = input_length + shift
     
-    print(input_length)
-    print(output_length)
-    print(crop_size)
-    print(num_targets)
 
     example = tf.io.parse_example(serialized_example, feature_map)
     sequence = tf.io.decode_raw(example['sequence'], tf.bool)

@@ -15,7 +15,7 @@ python3 train_model.py \
             --min_delta=0.00001 \
             --model_save_dir="gs://picard-testing-176520/enformer_performer/models" \
             --model_save_basename="enformer_performer_230213" \
-            --lr_base1="1.0e-04" \
+            --lr_base1="2.5e-06" \
             --lr_base2="1.0e-04" \
             --wd_1="0.0" \
             --wd_2="0.0" \
@@ -30,13 +30,14 @@ python3 train_model.py \
             --val_examples_TSS=2134 \
             --load_init="False" \
             --freeze_conv_layers="False" \
-            --num_examples_dict="human:34021,2213;mouse:29295,2209;rhesus:34021,2213;canine:34021,2213;rat:34021,2213" \
+            --num_examples_dict="human:34021,2213;mouse:29295,2209;rhesus:34021,2213" \
             --num_transformer_layers=6 \
             --num_heads=8 \
             --stable_variant="True" \
-            --optimizer="adabelief" \
-            --heads_channels="human:2696;mouse:987;rhesus:15;rat:13;canine:13" \
+            --optimizer="adamw" \
+            --heads_channels="human:2696;mouse:987;rhesus:15" \
             --kernel_transformation="relu_kernel_transformation" \
             --block_type="enformer" \
-            --use_max_pool="False" 
+            --use_max_pool="False" \
+            --enformer_checkpoint_path="sonnet_weights"
             

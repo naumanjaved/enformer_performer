@@ -302,9 +302,12 @@ def main():
             
             iters = []
             iters.append(tr_data_it_dict['human'])
+            print('append human')
             if 'mouse' in iterators.keys():
+                print('append mouse')
                 iters.append(tr_data_it_dict['mouse'])
             if 'rhesus' in iterators.keys():
+                print('append rhesus')
                 iters.append(tr_data_it_dict['rhesus'])
             if 'rat' in iterators.keys():
                 iters.append(tr_data_it_dict['rat'])
@@ -426,7 +429,7 @@ def main():
                 ValueError('ensure you have properly set cage start index')
 
             dist_train_step,val_step_h,val_step_m,val_step_TSS,build_step, metric_dict = \
-                            training_utils.return_train_val_functions_all_org(model,
+                            training_utils.return_train_val_functions_3(model,
                                                                       organism_dict['human'][0],
                                                                       organism_dict,
                                                                               organism_dict['human'][1],
