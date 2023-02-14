@@ -36,12 +36,13 @@ class enformer_performer(tf.keras.Model):
                  dropout_rate=0.40,
                  BN_momentum=0.90,
                  rel_pos_bins=1536,
+                 out_length = 1536,
+                 target_length = 896,
                  use_mask_pos=False,
                  use_rot_emb=True,
                  load_init=False,
                  freeze_conv_layers=False,
                  stable_variant=True,
-                 #use_enf_conv_block=True,
                  inits=None,
                  kernel_transformation="softmax_kernel_transformation",
                  normalize=True,
@@ -87,6 +88,8 @@ class enformer_performer(tf.keras.Model):
         #self.use_LN_only=use_LN_only
         self.block_type=block_type
         self.use_max_pool=use_max_pool
+        self.out_length=out_length
+        self.target_length=target_length
         
         if self.load_init:
             self.filter_list= [768,896,1024,1152,1280,1536]
@@ -404,8 +407,8 @@ class enformer_performer(tf.keras.Model):
                                                **kwargs)
 
 
-        self.crop_final = TargetLengthCrop1D(uncropped_length=1536, 
-                                             target_length=TARGET_LENGTH,
+        self.crop_final = TargetLengthCrop1D(uncropped_length=self.out_length, 
+                                             target_length=self.target_length,
                                              name='target_input')
         
         

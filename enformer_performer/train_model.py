@@ -346,9 +346,9 @@ def main():
                                                           freeze_conv_layers=wandb.config.freeze_conv_layers,
                                                           kernel_transformation=wandb.config.kernel_transformation,
                                                           normalize=wandb.config.normalize,
-                                                          block_type=wandb.config.block_type)
-                                                          #use_enf_conv_block=wandb.config.use_enf_conv_block)
-
+                                                          block_type=wandb.config.block_type,
+                                                          out_length=wandb.config.output_length,
+                                                          target_length=896)
 
             checkpoint_name = wandb.config.model_save_dir + "/" + \
                             wandb.config.model_save_basename + "_" + wandb.run.name
@@ -429,7 +429,7 @@ def main():
                 ValueError('ensure you have properly set cage start index')
 
             dist_train_step,val_step_h,val_step_m,val_step_TSS,build_step, metric_dict = \
-                            training_utils.return_train_val_functions_3(model,
+                            training_utils.return_train_val_functions(model,
                                                                       organism_dict['human'][0],
                                                                       organism_dict,
                                                                               organism_dict['human'][1],

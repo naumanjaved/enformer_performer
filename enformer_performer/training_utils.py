@@ -254,17 +254,19 @@ def extract_batch_norm_stats(model):
 
 
 def return_train_val_functions(model,
-                               train_steps_human,
-                               organism_dict,
-                               val_steps_TSS,
-                               optimizers_in,
-                               cage_start_index,
-                               strategy,
-                               metric_dict,
-                               global_batch_size,
-                               gradient_clip,
-                               batch_size_per_rep,
-                               loss_fn_main='poisson'):
+                                   train_steps_human,
+                                   organism_dict,
+                                       val_steps_h,
+                                       val_steps_m,
+                                   val_steps_TSS,
+                                   optimizers_in,
+                                   cage_start_index,
+                                   strategy,
+                                   metric_dict,
+                                   global_batch_size,
+                                   gradient_clip,
+                                   batch_size_per_rep,
+                                   loss_fn_main='poisson'):
     
     
     if loss_fn_main == 'mse':
@@ -366,116 +368,14 @@ def return_train_val_functions(model,
             optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
                                            remaining_vars))
             metric_dict["mouse_tr"].update_state(loss)
-            
-        @tf.function(jit_compile=True)
-        def train_step_rh(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
-
-            with tf.GradientTape(watch_accessed_variables=False) as tape:
-                conv_vars = model.stem_conv.trainable_variables + \
-                            model.stem_res_conv.trainable_variables + \
-                            model.stem_pool.trainable_variables + \
-                            model.conv_tower.trainable_variables
-                remaining_vars = model.performer.trainable_variables + \
-                                    model.final_pointwise_conv.trainable_variables + \
-                                    model.heads.trainable_variables
-                vars_all = conv_vars + remaining_vars
-                for var in vars_all:
-                    tape.watch(var)
-                output = model(sequence,
-                               training=True)["rhesus"]
-
-                output = tf.cast(output,dtype=tf.float32)
-                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            gradients = tape.gradient(loss, vars_all)
-            gradients, _ = tf.clip_by_global_norm(gradients, 
-                                                  gradient_clip)
-            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
-                                           conv_vars))
-            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
-                                           remaining_vars))
-            metric_dict["rhesus_tr"].update_state(loss)
-            
-        @tf.function(jit_compile=True)
-        def train_step_rat(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
-
-            with tf.GradientTape(watch_accessed_variables=False) as tape:
-                conv_vars = model.stem_conv.trainable_variables + \
-                            model.stem_res_conv.trainable_variables + \
-                            model.stem_pool.trainable_variables + \
-                            model.conv_tower.trainable_variables
-                remaining_vars = model.performer.trainable_variables + \
-                                    model.final_pointwise_conv.trainable_variables + \
-                                    model.heads.trainable_variables
-                vars_all = conv_vars + remaining_vars
-                for var in vars_all:
-                    tape.watch(var)
-                output = model(sequence,
-                               training=True)["rat"]
-
-                output = tf.cast(output,dtype=tf.float32)
-                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            gradients = tape.gradient(loss, vars_all)
-            gradients, _ = tf.clip_by_global_norm(gradients, 
-                                                  gradient_clip)
-            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
-                                           conv_vars))
-            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
-                                           remaining_vars))
-            metric_dict["rat_tr"].update_state(loss)
-            
-        @tf.function(jit_compile=True)
-        def train_step_canine(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
-
-            with tf.GradientTape(watch_accessed_variables=False) as tape:
-                conv_vars = model.stem_conv.trainable_variables + \
-                            model.stem_res_conv.trainable_variables + \
-                            model.stem_pool.trainable_variables + \
-                            model.conv_tower.trainable_variables
-                remaining_vars = model.performer.trainable_variables + \
-                                    model.final_pointwise_conv.trainable_variables + \
-                                    model.heads.trainable_variables
-                vars_all = conv_vars + remaining_vars
-                for var in vars_all:
-                    tape.watch(var)
-                output = model(sequence,
-                               training=True)["canine"]
-
-                output = tf.cast(output,dtype=tf.float32)
-                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            gradients = tape.gradient(loss, vars_all)
-            gradients, _ = tf.clip_by_global_norm(gradients, 
-                                                  gradient_clip)
-            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
-                                           conv_vars))
-            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
-                                           remaining_vars))
-            metric_dict["canine_tr"].update_state(loss)
+ 
             
         for _ in tf.range(train_steps_human):
             strategy.run(train_step_h,
                          args=(next(iter_human),))
-            if 'mouse' in organism_dict.keys():
-                strategy.run(train_step_m,
-                             args=(next(iters[1]),))
-            if 'rhesus' in organism_dict.keys():
-                strategy.run(train_step_rh,
-                             args=(next(iters[2]),))
-            if 'rat' in organism_dict.keys():
-                strategy.run(train_step_rat,
-                             args=(next(iters[3]),))
-            if 'canine' in organism_dict.keys():
-                strategy.run(train_step_canine,
-                             args=(next(iters[4]),))
-
+            strategy.run(train_step_m,
+                         args=(next(iters[1]),))
+            
     def dist_val_step_h(iterator):
         @tf.function(jit_compile=True)
         def val_step(inputs):
@@ -1186,23 +1086,23 @@ def make_plots(y_trues,
     fig_overall,ax_overall=plt.subplots(figsize=(6,6))
     
     ## scatter plot for 50k points max
-    idx = np.random.choice(np.arange(len(y_trues)), 20000, replace=False)
+    idx = np.random.choice(np.arange(len(true_zscore)), 20000, replace=False)
     
-    data = np.vstack([y_trues[idx],
-                      y_preds[idx]])
+    data = np.vstack([true_zscore[idx],
+                      pred_zscore[idx]])
     
-    min_true = min(y_trues)
-    max_true = max(y_trues)
+    min_true = min(true_zscore)
+    max_true = max(true_zscore)
     
-    min_pred = min(y_preds)
-    max_pred = max(y_preds)
+    min_pred = min(pred_zscore)
+    max_pred = max(pred_zscore)
     
     
     try:
         kernel = stats.gaussian_kde(data)(data)
         sns.scatterplot(
-            x=y_trues[idx],
-            y=y_preds[idx],
+            x=true_zscore[idx],
+            y=pred_zscore[idx],
             c=kernel,
             cmap="viridis")
         ax_overall.set_xlim(min_true,max_true)
@@ -1212,8 +1112,8 @@ def make_plots(y_trues,
         plt.title("overall gene corr")
     except np.linalg.LinAlgError as err:
         sns.scatterplot(
-            x=y_trues[idx],
-            y=y_preds[idx],
+            x=true_zscore[idx],
+            y=pred_zscore[idx],
             cmap="viridis")
         ax_overall.set_xlim(min_true,max_true)
         ax_overall.set_ylim(min_pred,max_pred)

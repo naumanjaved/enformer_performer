@@ -14,7 +14,7 @@ python3 train_model.py \
             --patience=50\
             --min_delta=0.00001 \
             --model_save_dir="gs://picard-testing-176520/enformer_performer/models" \
-            --model_save_basename="enformer_performer_230213" \
+            --model_save_basename="enformer_performer_230214" \
             --lr_base1="2.5e-06" \
             --lr_base2="1.0e-04" \
             --wd_1="0.0" \
@@ -27,19 +27,18 @@ python3 train_model.py \
             --dropout_rate=0.40 \
             --attention_dropout_rate=0.05 \
             --savefreq=5 \
-            --input_length=393216 \
-            --output_length=3072 \
+            --input_length=196608 \
+            --output_length=1536 \
             --val_examples_TSS=2134 \
-            --load_init="False" \
-            --freeze_conv_layers="False" \
+            --load_init="True" \
+            --freeze_conv_layers="True" \
             --num_examples_dict="human:34021,2213;mouse:29295,2209" \
-            --num_transformer_layers=6 \
+            --num_transformer_layers=4 \
             --num_heads=8 \
             --stable_variant="True" \
-            --optimizer="adamw" \
+            --optimizer="adabelief" \
             --heads_channels="human:2696;mouse:987" \
             --kernel_transformation="relu_kernel_transformation" \
             --block_type="enformer" \
-            --use_max_pool="False" \
-            --enformer_checkpoint_path="sonnet_weights"
+            --use_max_pool="False" 
             
