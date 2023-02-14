@@ -281,10 +281,7 @@ def main():
             wandb.config.update({"val_steps_TSS": args.val_examples_TSS // GLOBAL_BATCH_SIZE},
                                 allow_val_change=True)
             
-            print(organism_dict)
-            print(wandb.config.total_steps)
-            exit()
-            
+
             iterators = {}
             for key,val in wandb.config.heads_channels.items():
                 iterators[key]=(wandb.config.gcs_path,val)
