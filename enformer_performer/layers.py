@@ -146,15 +146,15 @@ class FFN(kl.Layer):
                                                   gamma_initializer="ones")
         self.FFN_dense_wide = kl.Dense(self.ffn_channels*self.ffn_widening,
                                        activation='linear',
-                                       kernel_initializer=FFN_kernel1_init if self.load_init else 'lecun_normal',
-                                       bias_initializer=FFN_bias1_init if self.load_init else 'lecun_normal',
+                                       kernel_initializer='lecun_normal',
+                                       bias_initializer='lecun_normal',
                                        use_bias=True)
         self.dropout = kl.Dropout(rate=self.ffn_dropout,**kwargs)
         self.relu = kl.ReLU()
         self.FFN_dense_narrow = kl.Dense(self.ffn_channels,
                                          activation='linear',
-                                         kernel_initializer=FFN_kernel2_init if self.load_init else 'lecun_normal',
-                                         bias_initializer=FFN_bias2_init if self.load_init else 'lecun_normal',
+                                         kernel_initializer='lecun_normal',
+                                         bias_initializer='lecun_normal',
                                          use_bias=True)
     
     def get_config(self):
@@ -207,15 +207,15 @@ class FFN_stable(kl.Layer):
                                                   gamma_initializer="ones")
         self.FFN_dense_wide = kl.Dense(self.ffn_channels*self.ffn_widening,
                                        activation='linear',
-                                       kernel_initializer=FFN_kernel1_init if self.load_init else 'lecun_normal',
-                                       bias_initializer=FFN_bias1_init if self.load_init else 'lecun_normal',
+                                       kernel_initializer='lecun_normal',
+                                       bias_initializer='lecun_normal',
                                        use_bias=True)
         self.dropout = kl.Dropout(rate=self.ffn_dropout,**kwargs)
         self.relu = kl.ReLU()
         self.FFN_dense_narrow = kl.Dense(self.ffn_channels,
                                          activation='linear',
-                                         kernel_initializer=FFN_kernel2_init if self.load_init else 'lecun_normal',
-                                         bias_initializer=FFN_bias2_init if self.load_init else 'lecun_normal',
+                                         kernel_initializer='lecun_normal',
+                                         bias_initializer='lecun_normal',
                                          use_bias=True)
     
     def get_config(self):
