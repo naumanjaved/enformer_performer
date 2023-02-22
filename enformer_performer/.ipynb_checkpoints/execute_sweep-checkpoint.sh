@@ -22,7 +22,7 @@ python3 train_model.py \
             --decay_frac="0.75" \
             --gradient_clip="5.0" \
             --BN_momentum="0.90" \
-            --epsilon=1.0e-8 \
+            --epsilon=1.0e-14 \
             --num_parallel=8 \
             --dropout_rate=0.40 \
             --attention_dropout_rate=0.05 \

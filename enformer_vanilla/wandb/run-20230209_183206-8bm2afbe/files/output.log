@@ -1,0 +1,70 @@
+WARNING:absl:options.experimental_threading is deprecated. Use options.threading instead.
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.7/site-packages/wandb/agents/pyagent.py", line 222, in _run_jobs_from_queue
+    thread.join()
+  File "/opt/conda/lib/python3.7/threading.py", line 1044, in join
+    self._wait_for_tstate_lock()
+  File "/opt/conda/lib/python3.7/threading.py", line 1060, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.7/logging/__init__.py", line 1619, in isEnabledFor
+    return self._cache[level]
+KeyError: 10
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "train_model.py", line 411, in <module>
+    main()
+  File "train_model.py", line 406, in main
+    wandb.agent(sweep_id, function=sweep_train)
+  File "/opt/conda/lib/python3.7/site-packages/wandb/wandb_agent.py", line 620, in agent
+    return pyagent(sweep_id, function, entity, project, count)
+  File "/opt/conda/lib/python3.7/site-packages/wandb/agents/pyagent.py", line 350, in pyagent
+    agent.run()
+  File "/opt/conda/lib/python3.7/site-packages/wandb/agents/pyagent.py", line 328, in run
+    self._run_jobs_from_queue()
+  File "/opt/conda/lib/python3.7/site-packages/wandb/agents/pyagent.py", line 265, in _run_jobs_from_queue
+    logger.debug("Ctrl + C detected. Stopping sweep.")
+  File "/opt/conda/lib/python3.7/logging/__init__.py", line 1365, in debug
+    if self.isEnabledFor(DEBUG):
+  File "/opt/conda/lib/python3.7/logging/__init__.py", line 1627, in isEnabledFor
+    level >= self.getEffectiveLevel()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.7/site-packages/wandb/agents/pyagent.py", line 222, in _run_jobs_from_queue
+    thread.join()
+  File "/opt/conda/lib/python3.7/threading.py", line 1044, in join
+    self._wait_for_tstate_lock()
+  File "/opt/conda/lib/python3.7/threading.py", line 1060, in _wait_for_tstate_lock
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.7/logging/__init__.py", line 1619, in isEnabledFor
+    return self._cache[level]
+KeyError: 10
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "train_model.py", line 411, in <module>
+    main()
+  File "train_model.py", line 406, in main
+    wandb.agent(sweep_id, function=sweep_train)
+  File "/opt/conda/lib/python3.7/site-packages/wandb/wandb_agent.py", line 620, in agent
+    return pyagent(sweep_id, function, entity, project, count)
+  File "/opt/conda/lib/python3.7/site-packages/wandb/agents/pyagent.py", line 350, in pyagent
+    agent.run()
+  File "/opt/conda/lib/python3.7/site-packages/wandb/agents/pyagent.py", line 328, in run
+    self._run_jobs_from_queue()
+  File "/opt/conda/lib/python3.7/site-packages/wandb/agents/pyagent.py", line 265, in _run_jobs_from_queue
+    logger.debug("Ctrl + C detected. Stopping sweep.")
+  File "/opt/conda/lib/python3.7/logging/__init__.py", line 1365, in debug
+    if self.isEnabledFor(DEBUG):
+  File "/opt/conda/lib/python3.7/logging/__init__.py", line 1627, in isEnabledFor
+    level >= self.getEffectiveLevel()
+KeyboardInterrupt
+Exception ignored in: <module 'threading' from '/opt/conda/lib/python3.7/threading.py'>
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.7/threading.py", line 1307, in _shutdown
+    lock.acquire()
+KeyboardInterrupt

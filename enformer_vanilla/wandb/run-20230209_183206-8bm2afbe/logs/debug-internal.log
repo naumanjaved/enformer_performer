@@ -1,0 +1,167 @@
+2023-02-09 18:32:06,642 INFO    StreamThr :2529 [internal.py:wandb_internal():93] W&B internal server running at pid: 2529, started at: 2023-02-09 18:32:06.640046
+2023-02-09 18:32:06,648 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: status
+2023-02-09 18:32:06,648 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: status
+2023-02-09 18:32:06,651 DEBUG   SenderThread:2529 [sender.py:send():302] send: header
+2023-02-09 18:32:06,651 INFO    WriterThread:2529 [datastore.py:open_for_write():75] open: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/run-8bm2afbe.wandb
+2023-02-09 18:32:06,682 DEBUG   SenderThread:2529 [sender.py:send():302] send: run
+2023-02-09 18:32:07,045 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: check_version
+2023-02-09 18:32:07,045 INFO    SenderThread:2529 [dir_watcher.py:__init__():216] watching files in: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files
+2023-02-09 18:32:07,046 INFO    SenderThread:2529 [sender.py:_start_run_threads():916] run started: 8bm2afbe with start time 1675967526.638728
+2023-02-09 18:32:07,046 DEBUG   SenderThread:2529 [sender.py:send():302] send: summary
+2023-02-09 18:32:07,046 INFO    SenderThread:2529 [sender.py:_save_file():1156] saving file wandb-summary.json with policy end
+2023-02-09 18:32:07,046 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: check_version
+2023-02-09 18:32:07,132 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: run_start
+2023-02-09 18:32:08,048 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_created():275] file/dir created: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/wandb-summary.json
+2023-02-09 18:32:09,764 DEBUG   HandlerThread:2529 [meta.py:__init__():35] meta init
+2023-02-09 18:32:09,764 DEBUG   HandlerThread:2529 [meta.py:__init__():50] meta init done
+2023-02-09 18:32:09,765 DEBUG   HandlerThread:2529 [meta.py:probe():216] probe
+2023-02-09 18:32:09,767 DEBUG   HandlerThread:2529 [meta.py:_setup_git():206] setup git
+2023-02-09 18:32:09,794 DEBUG   HandlerThread:2529 [meta.py:_setup_git():213] setup git done
+2023-02-09 18:32:09,794 DEBUG   HandlerThread:2529 [meta.py:_save_pip():54] save pip
+2023-02-09 18:32:09,796 DEBUG   HandlerThread:2529 [meta.py:_save_pip():68] save pip done
+2023-02-09 18:32:09,796 DEBUG   HandlerThread:2529 [meta.py:_save_conda():75] save conda
+2023-02-09 18:32:10,206 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_created():275] file/dir created: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/conda-environment.yaml
+2023-02-09 18:32:10,206 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_created():275] file/dir created: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/requirements.txt
+2023-02-09 18:32:23,612 DEBUG   HandlerThread:2529 [meta.py:_save_conda():85] save conda done
+2023-02-09 18:32:23,612 DEBUG   HandlerThread:2529 [meta.py:probe():254] probe done
+2023-02-09 18:32:23,616 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: stop_status
+2023-02-09 18:32:23,616 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: stop_status
+2023-02-09 18:32:23,654 DEBUG   SenderThread:2529 [sender.py:send():302] send: telemetry
+2023-02-09 18:32:23,654 DEBUG   SenderThread:2529 [sender.py:send():302] send: telemetry
+2023-02-09 18:32:23,654 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,654 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,654 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,654 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,655 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,655 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,655 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,656 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,656 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,656 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,656 DEBUG   SenderThread:2529 [sender.py:send():302] send: telemetry
+2023-02-09 18:32:23,656 DEBUG   SenderThread:2529 [sender.py:send():302] send: run
+2023-02-09 18:32:23,955 INFO    SenderThread:2529 [sender.py:send_run():797] updated run: 8bm2afbe
+2023-02-09 18:32:23,956 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,956 DEBUG   SenderThread:2529 [sender.py:send():302] send: config
+2023-02-09 18:32:23,957 DEBUG   SenderThread:2529 [sender.py:send():302] send: files
+2023-02-09 18:32:23,957 INFO    SenderThread:2529 [sender.py:_save_file():1156] saving file wandb-metadata.json with policy now
+2023-02-09 18:32:24,175 INFO    Thread-16 :2529 [upload_job.py:push():138] Uploaded file /tmp/tmpxcq1bq5dwandb/803y3p9o-wandb-metadata.json
+2023-02-09 18:32:24,212 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_modified():292] file/dir modified: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/conda-environment.yaml
+2023-02-09 18:32:24,212 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_modified():292] file/dir modified: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/config.yaml
+2023-02-09 18:32:24,212 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_created():275] file/dir created: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/output.log
+2023-02-09 18:32:24,213 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_created():275] file/dir created: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/wandb-metadata.json
+2023-02-09 18:32:25,553 DEBUG   SenderThread:2529 [sender.py:send():302] send: exit
+2023-02-09 18:32:25,553 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:25,554 INFO    SenderThread:2529 [sender.py:send_exit():438] handling exit code: 255
+2023-02-09 18:32:25,555 INFO    SenderThread:2529 [sender.py:send_exit():440] handling runtime: 18
+2023-02-09 18:32:25,558 INFO    SenderThread:2529 [sender.py:_save_file():1156] saving file wandb-summary.json with policy end
+2023-02-09 18:32:25,558 INFO    SenderThread:2529 [sender.py:send_exit():446] send defer
+2023-02-09 18:32:25,558 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:25,559 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:25,559 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 0
+2023-02-09 18:32:25,560 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:25,560 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 0
+2023-02-09 18:32:25,560 INFO    SenderThread:2529 [sender.py:transition_state():459] send defer: 1
+2023-02-09 18:32:25,561 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:25,561 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 1
+2023-02-09 18:32:25,621 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:25,621 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 1
+2023-02-09 18:32:25,621 INFO    SenderThread:2529 [sender.py:transition_state():459] send defer: 2
+2023-02-09 18:32:25,622 DEBUG   SenderThread:2529 [sender.py:send():302] send: stats
+2023-02-09 18:32:25,622 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:25,622 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 2
+2023-02-09 18:32:25,623 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:25,623 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 2
+2023-02-09 18:32:25,623 INFO    SenderThread:2529 [sender.py:transition_state():459] send defer: 3
+2023-02-09 18:32:25,624 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:25,624 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 3
+2023-02-09 18:32:25,624 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:25,624 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 3
+2023-02-09 18:32:25,624 INFO    SenderThread:2529 [sender.py:transition_state():459] send defer: 4
+2023-02-09 18:32:25,624 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:25,625 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 4
+2023-02-09 18:32:25,625 DEBUG   SenderThread:2529 [sender.py:send():302] send: summary
+2023-02-09 18:32:25,625 INFO    SenderThread:2529 [sender.py:_save_file():1156] saving file wandb-summary.json with policy end
+2023-02-09 18:32:25,626 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:25,626 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 4
+2023-02-09 18:32:25,626 INFO    SenderThread:2529 [sender.py:transition_state():459] send defer: 5
+2023-02-09 18:32:25,626 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:25,626 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 5
+2023-02-09 18:32:25,626 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:25,627 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 5
+2023-02-09 18:32:25,662 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:25,723 INFO    SenderThread:2529 [sender.py:transition_state():459] send defer: 6
+2023-02-09 18:32:25,723 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:25,724 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:25,724 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 6
+2023-02-09 18:32:25,725 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:25,725 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 6
+2023-02-09 18:32:25,826 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:26,213 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_modified():292] file/dir modified: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/output.log
+2023-02-09 18:32:26,213 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_modified():292] file/dir modified: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/config.yaml
+2023-02-09 18:32:26,213 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_modified():292] file/dir modified: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/wandb-summary.json
+2023-02-09 18:32:27,973 INFO    SenderThread:2529 [sender.py:transition_state():459] send defer: 7
+2023-02-09 18:32:27,973 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:27,974 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:27,974 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 7
+2023-02-09 18:32:27,975 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:27,975 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 7
+2023-02-09 18:32:27,975 INFO    SenderThread:2529 [dir_watcher.py:finish():362] shutting down directory watcher
+2023-02-09 18:32:28,076 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:28,214 INFO    Thread-12 :2529 [dir_watcher.py:_on_file_modified():292] file/dir modified: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/output.log
+2023-02-09 18:32:28,215 INFO    SenderThread:2529 [dir_watcher.py:finish():392] scan: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files
+2023-02-09 18:32:28,215 INFO    SenderThread:2529 [dir_watcher.py:finish():406] scan save: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/wandb-summary.json wandb-summary.json
+2023-02-09 18:32:28,215 INFO    SenderThread:2529 [dir_watcher.py:finish():406] scan save: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/conda-environment.yaml conda-environment.yaml
+2023-02-09 18:32:28,219 INFO    SenderThread:2529 [dir_watcher.py:finish():406] scan save: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/wandb-metadata.json wandb-metadata.json
+2023-02-09 18:32:28,220 INFO    SenderThread:2529 [dir_watcher.py:finish():406] scan save: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/requirements.txt requirements.txt
+2023-02-09 18:32:28,224 INFO    SenderThread:2529 [dir_watcher.py:finish():406] scan save: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/config.yaml config.yaml
+2023-02-09 18:32:28,225 INFO    SenderThread:2529 [dir_watcher.py:finish():406] scan save: /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/output.log output.log
+2023-02-09 18:32:28,229 INFO    SenderThread:2529 [sender.py:transition_state():459] send defer: 8
+2023-02-09 18:32:28,229 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:28,231 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: defer
+2023-02-09 18:32:28,235 INFO    HandlerThread:2529 [handler.py:handle_request_defer():164] handle defer: 8
+2023-02-09 18:32:28,240 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: defer
+2023-02-09 18:32:28,240 INFO    SenderThread:2529 [sender.py:send_request_defer():455] handle sender defer: 8
+2023-02-09 18:32:28,240 INFO    SenderThread:2529 [file_pusher.py:finish():171] shutting down file pusher
+2023-02-09 18:32:28,331 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:28,332 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:28,434 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:28,434 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:28,479 INFO    Thread-20 :2529 [upload_job.py:push():138] Uploaded file /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/config.yaml
+2023-02-09 18:32:28,487 INFO    Thread-18 :2529 [upload_job.py:push():138] Uploaded file /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/conda-environment.yaml
+2023-02-09 18:32:28,498 INFO    Thread-21 :2529 [upload_job.py:push():138] Uploaded file /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/output.log
+2023-02-09 18:32:28,536 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:28,536 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:28,588 INFO    Thread-17 :2529 [upload_job.py:push():138] Uploaded file /home/jupyter/dev/genformer_public/enformer_vanilla/wandb/run-20230209_183206-8bm2afbe/files/wandb-summary.json
+2023-02-09 18:32:28,638 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:28,638 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:28,740 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:28,741 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:28,842 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:28,843 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:28,944 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:28,945 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,047 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,047 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,149 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,149 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,251 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,251 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,353 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,354 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,455 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,456 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,558 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,558 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,660 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,660 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,762 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,762 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,864 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,865 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:29,967 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:29,967 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:30,069 DEBUG   HandlerThread:2529 [handler.py:handle_request():141] handle_request: poll_exit
+2023-02-09 18:32:30,069 DEBUG   SenderThread:2529 [sender.py:send_request():316] send_request: poll_exit
+2023-02-09 18:32:30,973 INFO    MainThread:2529 [internal.py:handle_exit():80] Internal process exited
+2023-02-09 18:32:30,973 WARNING MsgRouterThr:2529 [router.py:message_loop():73] EOFError seen in message_loop

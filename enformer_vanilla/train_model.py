@@ -224,6 +224,11 @@ def main():
 
             metric_dict = {}
 
+            if wandb.config.subsets == 'all':
+                subset_bool=False
+            else:
+                subset_bool=True
+            
             dist_train_step_both,dist_train_step_h,val_step_h,val_step_m,val_step_TSS,build_step, metric_dict = \
                             training_utils.return_train_val_functions(model,
                                                                       organism_dict['human'][0],
@@ -236,6 +241,7 @@ def main():
                                                                       GLOBAL_BATCH_SIZE,
                                                                       wandb.config.gradient_clip,
                                                                       BATCH_SIZE_PER_REPLICA,
+                                                                      subset_bool,
                                                                       loss_fn_main='poisson')
             
             
@@ -273,7 +279,7 @@ def main():
                 
                 if 'mouse' in organism_dict.keys():
                     dist_train_step_both(tr_data_it_dict['human'],
-                                    tr_data_it_dict['mouse'])
+                                         tr_data_it_dict['mouse'])
                     wandb.log({'mouse_train_loss': metric_dict['mouse_tr'].result().numpy()},
                               step=epoch_i)
                 else:
@@ -299,18 +305,30 @@ def main():
                               step=epoch_i)
                     pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
                     
-                    wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
-                               organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:684]),
-                               organism+'_CHIP_pearsons': np.nanmean(pearsonsR[684:4675]),
-                               organism+'_CAGE_pearsons': np.nanmean(pearsonsR[4675:])},
-                              step=epoch_i)
-
-                    R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
-                    wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
-                               organism+'_DNASE_R2': np.nanmean(R2[:684]),
-                               organism+'_CHIP_R2': np.nanmean(R2[684:4675]),
-                               organism+'_CAGE_R2': np.nanmean(R2[4675:])},
-                              step=epoch_i)
+                    if subsets != 'all': 
+                        wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
+                                   organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:674]),
+                                   organism+'_CHIP_pearsons': np.nanmean(pearsonsR[674:2058]),
+                                   organism+'_CAGE_pearsons': np.nanmean(pearsonsR[2058:])},
+                                  step=epoch_i)
+                        R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
+                        wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
+                                   organism+'_DNASE_R2': np.nanmean(R2[:674]),
+                                   organism+'_CHIP_R2': np.nanmean(R2[674:2058]),
+                                   organism+'_CAGE_R2': np.nanmean(R2[2058:])},
+                                  step=epoch_i)
+                    else:
+                        wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
+                                   organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:684]),
+                                   organism+'_CHIP_pearsons': np.nanmean(pearsonsR[684:4675]),
+                                   organism+'_CAGE_pearsons': np.nanmean(pearsonsR[4675:])},
+                                  step=epoch_i)
+                        R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
+                        wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
+                                   organism+'_DNASE_R2': np.nanmean(R2[:684]),
+                                   organism+'_CHIP_R2': np.nanmean(R2[684:4675]),
+                                   organism+'_CAGE_R2': np.nanmean(R2[4675:])},
+                                  step=epoch_i)
                 
                 print('human_val_loss: ' + str(metric_dict['human_val'].result().numpy()))
                 val_losses.append(metric_dict['human_val'].result().numpy())

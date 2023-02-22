@@ -1,8 +1,8 @@
 #!/bin/bash -l
 
 python3 train_model.py \
-            --tpu_name="pod" \
-            --tpu_zone="us-east1-d" \
+            --tpu_name="node-5" \
+            --tpu_zone="us-central1-a" \
             --wandb_project="enformer_performer" \
             --wandb_user="njaved" \
             --wandb_sweep_name="enformer_performer" \
@@ -22,5 +22,6 @@ python3 train_model.py \
             --savefreq=5 \
             --val_examples_TSS=100 \
             --use_enformer_weights="False" \
-            --num_examples_dict="human:34021,2213;mouse:29295,2209" \
-            --heads_channels="human:5313;mouse:1643"
+            --num_examples_dict="human:34021,2213;mouse:29295,2209;rhesus:31755,3802;rat:25142,4197;canine:18800,4132" \
+            --heads_channels="human:5313;mouse:1643" \
+            --block_type="group_norm"

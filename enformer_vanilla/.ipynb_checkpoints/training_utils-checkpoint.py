@@ -263,6 +263,7 @@ def return_train_val_functions(model,
                                global_batch_size,
                                gradient_clip,
                                batch_size_per_rep,
+                               subset_bool,
                                loss_fn_main='poisson'):
     
     
@@ -416,15 +417,21 @@ def return_train_val_functions(model,
     def dist_val_step_TSS(iterator): #input_batch, model, optimizer, organism, gradient_clip):
         @tf.function(jit_compile=True)
         def val_step(inputs):
-            target = inputs['target'][:,:,4675:]
-
+            if subset_bool: 
+                target = inputs['target'][:,:,2058:]
+            else:
+                target = inputs['target'][:,:,4675:]
+                
             sequence=tf.cast(inputs['sequence'], dtype=tf.float32)
 
             tss_mask = tf.cast(inputs['tss_mask'],dtype=tf.float32)
             gene_name = inputs['gene_name']
 
             cell_types = inputs['cell_types']
-            output = model(sequence,is_training=False)['human'][:,:,4675:]
+            if subset_bool:
+                output = model(sequence,is_training=False)['human'][:,:,2058:]
+            else:
+                output = model(sequence,is_training=False)['human'][:,:,4675:]
             
             pred = tf.reduce_sum(tf.cast(output,dtype=tf.float32) * tss_mask,axis=1)
             true = tf.reduce_sum(tf.cast(target,dtype=tf.float32) * tss_mask,axis=1)
@@ -625,6 +632,11 @@ def return_dataset(gcs_path,
     else:
         list_files = (tf.io.gfile.glob(os.path.join(gcs_path,
                                                     wc)))
+        
+    print(split)
+    print(tss_bool)
+    print(list_files)
+    
     #print(list_files)
     random.shuffle(list_files)
     files = tf.data.Dataset.list_files(list_files,shuffle=True)
@@ -730,7 +742,7 @@ def return_distributed_iterators(gcs_paths_dict,
                                  global_batch_size,
                                  input_length,
                                  max_shift,
-                                 5313,
+                                 gcs_path_dicts['human'][1],
                                  options,
                                  num_parallel_calls,
                                  num_epoch,
@@ -999,6 +1011,7 @@ def parse_args(parser):
                         type=str,
                         default="all",
                         help= 'subsets')
+    
     args = parser.parse_args()
     return parser
 
