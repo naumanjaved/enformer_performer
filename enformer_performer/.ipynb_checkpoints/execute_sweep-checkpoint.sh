@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 python3 train_model.py \
-            --tpu_name="po1" \
+            --tpu_name="pod" \
             --tpu_zone="us-east1-d" \
             --wandb_project="enformer_performer" \
             --wandb_user="njaved" \
@@ -41,5 +41,5 @@ python3 train_model.py \
             --kernel_transformation="relu_kernel_transformation" \
             --block_type="enformer" \
             --use_max_pool="False" \
-            --filter_list="512,512,640,768,896,1024"
+            --filter_list="1024,1024,1024,1024,1024,1024"
             

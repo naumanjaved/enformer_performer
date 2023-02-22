@@ -673,7 +673,7 @@ def return_train_val_functions_3(model,
     def dist_val_step_TSS(iterator): #input_batch, model, optimizer, organism, gradient_clip):
         @tf.function(jit_compile=True)
         def val_step(inputs):
-            target = inputs['target'][:,:,2058:]
+            target = inputs['target'][:,:,cage_start_index:]
 
             sequence=tf.cast(inputs['sequence'], dtype=tf.float32)
 
@@ -681,7 +681,7 @@ def return_train_val_functions_3(model,
             gene_name = inputs['gene_name']
 
             cell_types = inputs['cell_types']
-            output = model(sequence,training=False)['human'][:,:,2058:]
+            output = model(sequence,training=False)['human'][:,:,cage_start_index:]
             
             pred = tf.reduce_sum(tf.cast(output,dtype=tf.float32) * tss_mask,axis=1)
             true = tf.reduce_sum(tf.cast(target,dtype=tf.float32) * tss_mask,axis=1)
