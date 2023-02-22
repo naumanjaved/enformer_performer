@@ -390,7 +390,7 @@ def return_train_val_functions(model,
             metric_dict["human_val"].update_state(loss)
             metric_dict['human_pearsonsR'].update_state(target, output)
             metric_dict['human_R2'].update_state(target, output)
-        for _ in tf.range(organism_dict['human'][0]): ## for loop within @tf.fuction for improved TPU performance
+        for _ in tf.range(val_steps_h): ## for loop within @tf.fuction for improved TPU performance
             strategy.run(val_step,
                          args=(next(iterator),))
         
@@ -408,7 +408,7 @@ def return_train_val_functions(model,
             metric_dict["mouse_val"].update_state(loss)
             metric_dict['mouse_pearsonsR'].update_state(target, output)
             metric_dict['mouse_R2'].update_state(target, output)
-        for _ in tf.range(organism_dict['mouse'][0]): ## for loop within @tf.fuction for improved TPU performance
+        for _ in tf.range(val_steps_m): ## for loop within @tf.fuction for improved TPU performance
             strategy.run(val_step,
                          args=(next(iterator),))
             
