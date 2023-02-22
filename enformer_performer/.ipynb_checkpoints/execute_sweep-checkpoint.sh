@@ -40,5 +40,6 @@ python3 train_model.py \
             --heads_channels="human:5313;mouse:1643" \
             --kernel_transformation="relu_kernel_transformation" \
             --block_type="enformer" \
-            --use_max_pool="False" 
+            --use_max_pool="False" \
+            --filter_list="512,512,640,768,896,1024"
             
