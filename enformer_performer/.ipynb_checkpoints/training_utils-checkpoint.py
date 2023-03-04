@@ -302,11 +302,7 @@ def return_train_val_functions(model,
     
     def dist_train_step(iters):
         iter_human = iters[0]
-        # iter_mouse = iters[1]
-        # iter_rhesus = iters[2]
-        # iter_rat = iters[3]
-        # iter_canine = iters[4]
-        
+
         @tf.function(jit_compile=True)
         def train_step_h(inputs):
             sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
@@ -390,6 +386,8 @@ def return_train_val_functions(model,
             metric_dict["human_val"].update_state(loss)
             metric_dict['human_pearsonsR'].update_state(target, output)
             metric_dict['human_R2'].update_state(target, output)
+            
+            
         for _ in tf.range(val_steps_h): ## for loop within @tf.fuction for improved TPU performance
             strategy.run(val_step,
                          args=(next(iterator),))
