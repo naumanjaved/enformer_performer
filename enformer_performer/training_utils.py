@@ -1024,7 +1024,7 @@ def return_distributed_iterators(gcs_paths_dict,
 
     val_data_TSS = return_dataset(gcs_path_tss,
                                   "human",
-                                 "tssmask-valid",
+                                 "valid",
                                  True,
                                  global_batch_size,
                                  input_length,
