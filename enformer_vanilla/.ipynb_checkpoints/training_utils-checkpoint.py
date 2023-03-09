@@ -128,130 +128,6 @@ def get_initializers(checkpoint_path):
         initializers_dict.update(out_dict)
     return initializers_dict
 
-
-def extract_batch_norm_stats(model):
-    gamma_names=[]
-    gamma_vars=[]
-    gamma_layer_num=[]
-    beta_names=[]
-    beta_vars=[]
-    beta_layer_num=[]
-    moving_means_names=[]
-    moving_means_vars=[]
-    moving_means_layer_num=[]
-    moving_vars_names=[]
-    moving_vars_vars=[]
-    moving_vars_layer_num=[]
-
-    all_vars=[(k,x.name,x) for k,x in enumerate(model.stem_res_conv.variables)]
-
-    for gamma_tuple in all_vars:
-        if 'sync_batch_normalization' in gamma_tuple[1]:
-
-            specific_var = gamma_tuple[1].split('/')[1].split(':')[0]
-            layer_num=0
-            var_name = specific_var + "_1"
-            if (('gamma' in var_name) or 'moving_variance' in var_name):
-                vals = list(np.log(1.0+gamma_tuple[-1].values[0].numpy()))
-            else:
-                vals = list(np.log(1.0+np.abs(gamma_tuple[-1].values[0].numpy())) * \
-                                    np.sign(gamma_tuple[-1].values[0].numpy()))
-            #print(vals)
-            names = []
-            layer_nums=[]
-            for variable_val in vals:
-                names.append(var_name)
-                layer_nums.append(layer_num)
-            if 'gamma' in var_name:
-                gamma_names += names
-                gamma_vars += vals
-                gamma_layer_num += layer_nums
-            if 'beta' in var_name:
-                beta_names += names
-                beta_vars += vals
-                beta_layer_num += layer_nums
-            if 'moving_mean' in var_name:
-                moving_means_names += names
-                moving_means_vars += vals
-                moving_means_layer_num += layer_nums
-            if 'moving_variance' in var_name:
-                moving_vars_names += names
-                moving_vars_vars += vals    
-                moving_vars_layer_num += layer_nums
-
-
-    all_vars=[(k,x.name,x) for k,x in enumerate(model.conv_tower.variables)]
-
-    for gamma_tuple in all_vars:
-        if 'sync_batch_normalization' in gamma_tuple[1]:
-            specific_var = gamma_tuple[1].split('/')[1].split(':')[0]
-            layer_num= int(gamma_tuple[1].split('/')[0].split('_')[-1])+1
-
-            var_name = specific_var + "_" + str(layer_num)
-            if (('gamma' in var_name) or 'moving_variance' in var_name):
-                vals = list(np.log(1.0+gamma_tuple[-1].values[0].numpy()))
-            else:
-                vals = list(np.log(1.0+np.abs(gamma_tuple[-1].values[0].numpy())) * \
-                                    np.sign(gamma_tuple[-1].values[0].numpy()))
-
-            names = []
-            layer_nums=[]
-            for variable_val in vals:
-                names.append(var_name)
-                layer_nums.append(layer_num)
-            if 'gamma' in var_name:
-                gamma_names += names
-                gamma_vars += vals
-                gamma_layer_num += layer_nums
-            if 'beta' in var_name:
-                beta_names += names
-                beta_vars += vals
-                beta_layer_num += layer_nums
-            if 'moving_mean' in var_name:
-                moving_means_names += names
-                moving_means_vars += vals
-                moving_means_layer_num += layer_nums
-            if 'moving_variance' in var_name:
-                moving_vars_names += names
-                moving_vars_vars += vals    
-                moving_vars_layer_num += layer_nums
-    
-
-    gamma_df=pd.DataFrame(list(zip(gamma_names, gamma_vars,gamma_layer_num)), columns =['layer', 'values','layer_num'])
-    gamma_df=gamma_df.sort_values(by="layer_num",ascending=False)
-    fig_gamma,ax_gamma=plt.subplots(figsize=(6,6))
-    sns.kdeplot(data=gamma_df, x="values", hue="layer")
-    plt.xlabel("log(1.0+gamma)")
-    plt.ylabel("count")
-    plt.title("batch_norm_gamma")
-    
-    beta_df=pd.DataFrame(list(zip(beta_names, beta_vars,beta_layer_num)), columns =['layer', 'values','layer_num'])
-    beta_df=beta_df.sort_values(by="layer_num",ascending=False)
-    fig_beta,ax_beta=plt.subplots(figsize=(6,6))
-    sns.kdeplot(data=beta_df, x="values", hue="layer")
-    plt.xlabel("log(1.0+|beta|)*sign(beta)")
-    plt.ylabel("count")
-    plt.title("batch_norm_beta")
-
-    moving_means_df=pd.DataFrame(list(zip(moving_means_names, moving_means_vars,moving_means_layer_num)), columns =['layer', 'values','layer_num'])
-    moving_means_df=moving_means_df.sort_values(by="layer_num",ascending=False)
-    fig_moving_means,ax_moving_means=plt.subplots(figsize=(6,6))
-    sns.kdeplot(data=moving_means_df, x="values", hue="layer")
-    plt.xlabel("log(1.0+|moving_mean|)*sign(moving_mean)")
-    plt.ylabel("count")
-    plt.title("batch_norm_moving_mean")
-    
-    moving_vars_df=pd.DataFrame(list(zip(moving_vars_names, moving_vars_vars,moving_vars_layer_num)), columns =['layer', 'values','layer_num'])
-    moving_vars_df=moving_vars_df.sort_values(by="layer_num",ascending=False)
-    fig_moving_vars,ax_moving_vars=plt.subplots(figsize=(6,6))
-    sns.kdeplot(data=moving_vars_df, x="values", hue="layer")
-    plt.xlabel("log(1.0+moving_variance)")
-    plt.ylabel("count")
-    plt.title("batch_norm_moving_var")
-    
-    return fig_gamma, fig_beta, fig_moving_means,fig_moving_vars
-
-
 def return_train_val_functions(model,
                                train_steps_human,
                                val_steps_human,
@@ -262,8 +138,6 @@ def return_train_val_functions(model,
                                metric_dict,
                                global_batch_size,
                                gradient_clip,
-                               batch_size_per_rep,
-                               subset_bool,
                                loss_fn_main='poisson'):
     
     
@@ -417,10 +291,7 @@ def return_train_val_functions(model,
     def dist_val_step_TSS(iterator): #input_batch, model, optimizer, organism, gradient_clip):
         @tf.function(jit_compile=True)
         def val_step(inputs):
-            if subset_bool: 
-                target = inputs['target'][:,:,2058:]
-            else:
-                target = inputs['target'][:,:,4675:]
+            target = inputs['target'][:,:,4675:]
                 
             sequence=tf.cast(inputs['sequence'], dtype=tf.float32)
 
@@ -428,10 +299,7 @@ def return_train_val_functions(model,
             gene_name = inputs['gene_name']
 
             cell_types = inputs['cell_types']
-            if subset_bool:
-                output = model(sequence,is_training=False)['human'][:,:,2058:]
-            else:
-                output = model(sequence,is_training=False)['human'][:,:,4675:]
+            output = model(sequence,is_training=False)['human'][:,:,4675:]
             
             pred = tf.reduce_sum(tf.cast(output,dtype=tf.float32) * tss_mask,axis=1)
             true = tf.reduce_sum(tf.cast(target,dtype=tf.float32) * tss_mask,axis=1)
@@ -632,23 +500,15 @@ def return_dataset(gcs_path,
     else:
         list_files = (tf.io.gfile.glob(os.path.join(gcs_path,
                                                     wc)))
-        
-    print(split)
-    print(tss_bool)
-    print(list_files)
-    
-    #print(list_files)
-    random.shuffle(list_files)
-    files = tf.data.Dataset.list_files(list_files,shuffle=True)
+
+    files = tf.data.Dataset.list_files(list_files,shuffle=True, seed=42)
     
     dataset = tf.data.TFRecordDataset(files,
                                       compression_type='ZLIB',
                                       num_parallel_reads=num_parallel)
     dataset = dataset.with_options(options)
     if split == 'train':
-        #global g
-        #if g is None:
-        
+
         dataset = dataset.map(lambda record: deserialize_tr(record,
                                                             input_length,
                                                             max_shift,
@@ -737,12 +597,12 @@ def return_distributed_iterators(gcs_paths_dict,
 
     val_data_TSS = return_dataset(gcs_path_tss,
                                   "human",
-                                 "tssmask-valid",
+                                 "valid",
                                  True,
                                  global_batch_size,
                                  input_length,
                                  max_shift,
-                                 gcs_path_dicts['human'][1],
+                                 gcs_paths_dict['human'][1],
                                  options,
                                  num_parallel_calls,
                                  num_epoch,
@@ -1006,11 +866,11 @@ def parse_args(parser):
                         type=str,
                         default="False",
                         help= 'use_enformer_weights')
-    parser.add_argument('--subsets',
-                        dest='subsets',
+    parser.add_argument('--train_model',
+                        dest='train_model',
                         type=str,
-                        default="all",
-                        help= 'subsets')
+                        default="False",
+                        help= 'train_model')
     
     args = parser.parse_args()
     return parser
