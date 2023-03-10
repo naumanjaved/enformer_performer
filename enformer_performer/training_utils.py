@@ -929,14 +929,14 @@ def parse_args(parser):
                         dest='lr_base2',
                         default="1.0e-03",
                         help='lr_base2')
-    parser.add_argument('--wd_1',
-                        dest='wd_1',
+    parser.add_argument('--wd_1_frac',
+                        dest='wd_1_frac',
                         type=str,
-                        help='wd_1')
-    parser.add_argument('--wd_2',
-                        dest='wd_2',
+                        help='wd_1_frac')
+    parser.add_argument('--wd_2_frac',
+                        dest='wd_2_frac',
                         type=str,
-                        help='wd_2')
+                        help='wd_2_frac')
     parser.add_argument('--decay_frac',
                         dest='decay_frac',
                         type=str,

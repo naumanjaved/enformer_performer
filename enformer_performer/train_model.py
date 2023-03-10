@@ -111,11 +111,11 @@ def main():
                 'lr_base2': {
                     'values':[float(x) for x in args.lr_base2.split(',')]
                 },
-                'wd_1': {
-                    'values':[float(x) for x in args.wd_1.split(',')]
+                'wd_1_frac': {
+                    'values':[float(x) for x in args.wd_1_frac.split(',')]
                 },
-                'wd_2': {
-                    'values':[float(x) for x in args.wd_2.split(',')]
+                'wd_2_frac': {
+                    'values':[float(x) for x in args.wd_2_frac.split(',')]
                 },
                 'decay_frac': {
                     'values':[float(x) for x in args.decay_frac.split(',')]
@@ -345,9 +345,9 @@ def main():
                                              warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps*wandb.config.num_epochs,
                                              decay_schedule_fn=scheduler1)
                 scheduler1_wd= tf.keras.optimizers.schedules.CosineDecay(
-                    initial_learning_rate=wandb.config.wd_1,
+                    initial_learning_rate=wandb.config.wd_1_frac * wandb.config.lr_base1,
                     decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
-                scheduler1_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_1,
+                scheduler1_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_1_frac * wandb.config.lr_base1,
                                              warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps*wandb.config.num_epochs,
                                              decay_schedule_fn=scheduler1)
 
@@ -362,9 +362,9 @@ def main():
                                              warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps*wandb.config.num_epochs,
                                              decay_schedule_fn=scheduler2)
                 scheduler2_wd= tf.keras.optimizers.schedules.CosineDecay(
-                    initial_learning_rate=wandb.config.wd_2,
+                    initial_learning_rate=wandb.config.wd_2_frac * wandb.config.lr_base2,
                     decay_steps=wandb.config.total_steps*wandb.config.num_epochs, alpha=wandb.config.decay_frac)
-                scheduler2_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_2,
+                scheduler2_wd=optimizers.WarmUp(initial_learning_rate=wandb.config.wd_2_frac * wandb.config.lr_base2,
                                              warmup_steps=wandb.config.warmup_frac*wandb.config.total_steps*wandb.config.num_epochs,
                                              decay_schedule_fn=scheduler2)
 
@@ -375,7 +375,7 @@ def main():
                 optimizer1 = tfa.optimizers.AdaBelief(
                     learning_rate= wandb.config.lr_base1,
                     epsilon= wandb.config.epsilon,
-                    weight_decay= wandb.config.wd_1,
+                    weight_decay= wandb.config.lr_base1*wandb.config.wd_1_frac,
                     rectify=True,
                     total_steps= wandb.config.total_steps*wandb.config.num_epochs,
                     warmup_proportion= wandb.config.warmup_frac,
@@ -384,7 +384,7 @@ def main():
                 optimizer2 = tfa.optimizers.AdaBelief(
                     learning_rate= wandb.config.lr_base2,
                     epsilon= wandb.config.epsilon,
-                    weight_decay= wandb.config.wd_2,
+                    weight_decay= wandb.config.lr_base2 * wandb.config.wd_2_frac,
                     rectify=True,
                     total_steps= wandb.config.total_steps*wandb.config.num_epochs,
                     warmup_proportion= wandb.config.warmup_frac,

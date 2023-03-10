@@ -122,7 +122,7 @@ class enformer_performer(tf.keras.Model):
                 sync_batch_norm_fp32(
                               beta_init=beta_init if self.load_init else "zeros",
                               gamma_init=gamma_init if self.load_init else "ones",
-                              train= False if self.load_init else True,
+                              train=False if self.freeze_conv_layers else True,
                               momentum=self.BN_momentum,
                               epsilon=1.0e-05,
                               mean_init=mean_init if self.load_init else "zeros",
