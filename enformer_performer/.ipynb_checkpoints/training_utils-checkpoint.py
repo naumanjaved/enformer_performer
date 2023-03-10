@@ -743,59 +743,61 @@ def make_plots(y_trues,
     corrs_overall = np.nanmean(cell_specific_corrs), \
                         np.nanmean(gene_specific_corrs)
                         
-        
-    fig_overall,ax_overall=plt.subplots(figsize=(6,6))
-    
-    ## scatter plot for 50k points max
-    idx = np.random.choice(np.arange(len(true_zscore)), 5000, replace=False)
-    
-    data = np.vstack([true_zscore[idx],
-                      pred_zscore[idx]])
-    
-    min_true = min(true_zscore)
-    max_true = max(true_zscore)
-    
-    min_pred = min(pred_zscore)
-    max_pred = max(pred_zscore)
-    
-    
     try:
-        kernel = stats.gaussian_kde(data)(data)
-        sns.scatterplot(
-            x=true_zscore[idx],
-            y=pred_zscore[idx],
-            c=kernel,
-            cmap="viridis")
-        ax_overall.set_xlim(min_true,max_true)
-        ax_overall.set_ylim(min_pred,max_pred)
-        plt.xlabel("log-true")
-        plt.ylabel("log-pred")
-        plt.title("overall gene corr")
-    except np.linalg.LinAlgError as err:
-        sns.scatterplot(
-            x=true_zscore[idx],
-            y=pred_zscore[idx],
-            cmap="viridis")
-        ax_overall.set_xlim(min_true,max_true)
-        ax_overall.set_ylim(min_pred,max_pred)
-        plt.xlabel("log-true")
-        plt.ylabel("log-pred")
-        plt.title("overall gene corr")
+        fig_overall,ax_overall=plt.subplots(figsize=(6,6))
 
-    fig_gene_spec,ax_gene_spec=plt.subplots(figsize=(6,6))
-    sns.histplot(x=np.asarray(gene_specific_corrs), bins=50)
-    plt.xlabel("log-log pearsons")
-    plt.ylabel("count")
-    plt.title("single gene cross cell-type correlations")
+        ## scatter plot for 50k points max
+        idx = np.random.choice(np.arange(len(true_zscore)), 5000, replace=False)
 
-    fig_cell_spec,ax_cell_spec=plt.subplots(figsize=(6,6))
-    sns.histplot(x=np.asarray(cell_specific_corrs), bins=50)
-    plt.xlabel("log-log pearsons")
-    plt.ylabel("count")
-    plt.title("single cell-type cross gene correlations")
-        
-        ### by coefficient variation breakdown
-    figures = fig_cell_spec, fig_gene_spec, fig_overall
+        data = np.vstack([true_zscore[idx],
+                          pred_zscore[idx]])
+
+        min_true = min(true_zscore)
+        max_true = max(true_zscore)
+
+        min_pred = min(pred_zscore)
+        max_pred = max(pred_zscore)
+
+
+        try:
+            kernel = stats.gaussian_kde(data)(data)
+            sns.scatterplot(
+                x=true_zscore[idx],
+                y=pred_zscore[idx],
+                c=kernel,
+                cmap="viridis")
+            ax_overall.set_xlim(min_true,max_true)
+            ax_overall.set_ylim(min_pred,max_pred)
+            plt.xlabel("log-true")
+            plt.ylabel("log-pred")
+            plt.title("overall gene corr")
+        except np.linalg.LinAlgError as err:
+            sns.scatterplot(
+                x=true_zscore[idx],
+                y=pred_zscore[idx],
+                cmap="viridis")
+            ax_overall.set_xlim(min_true,max_true)
+            ax_overall.set_ylim(min_pred,max_pred)
+            plt.xlabel("log-true")
+            plt.ylabel("log-pred")
+            plt.title("overall gene corr")
+
+        fig_gene_spec,ax_gene_spec=plt.subplots(figsize=(6,6))
+        sns.histplot(x=np.asarray(gene_specific_corrs), bins=50)
+        plt.xlabel("log-log pearsons")
+        plt.ylabel("count")
+        plt.title("single gene cross cell-type correlations")
+
+        fig_cell_spec,ax_cell_spec=plt.subplots(figsize=(6,6))
+        sns.histplot(x=np.asarray(cell_specific_corrs), bins=50)
+        plt.xlabel("log-log pearsons")
+        plt.ylabel("count")
+        plt.title("single cell-type cross gene correlations")
+
+            ### by coefficient variation breakdown
+        figures = fig_cell_spec, fig_gene_spec, fig_overall
+    except ValueError as err:
+        figures = None, None, None
     
     return figures, corrs_overall
 

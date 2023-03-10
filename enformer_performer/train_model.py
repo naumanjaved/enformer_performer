@@ -314,8 +314,6 @@ def main():
                                                           hidden_size=wandb.config.filter_list[-1],
                                                           numerical_stabilizer=0.001,
                                                           inits=inits,
-                                                          #use_LN_only=wandb.config.use_LN_only,
-                                                          #post_BN_dropout_rate=wandb.config.post_BN_dropout_rate,
                                                           BN_momentum=wandb.config.BN_momentum,
                                                           stable_variant=wandb.config.stable_variant,
                                                           dropout_rate=wandb.config.dropout_rate,
@@ -493,78 +491,77 @@ def main():
                 if epoch_i < wandb.config.fine_tune_epochs: 
                     val_step_m(val_data_it_dict['mouse'])
                 
-                for organism in ['human','mouse']:
-                    if organism == 'human':
-                        if wandb.config.heads_channels['human'] == 5313:
-                            wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
-                                      step=epoch_i)
-                            pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
 
-                            wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
-                                       organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:684]),
-                                       organism+'_CHIP_pearsons': np.nanmean(pearsonsR[684:4675]),
-                                       organism+'_CAGE_pearsons': np.nanmean(pearsonsR[4675:])},
+                    if wandb.config.heads_channels['human'] == 5313:
+                        wandb.log({'human_val_loss': metric_dict['human_val'].result().numpy()},
+                                  step=epoch_i)
+                        pearsonsR=metric_dict['human_pearsonsR'].result()['PearsonR'].numpy()
+
+                        wandb.log({'human_all_tracks_pearsons': np.nanmean(pearsonsR),
+                                   'human_DNASE_pearsons': np.nanmean(pearsonsR[:684]),
+                                   'human_CHIP_pearsons': np.nanmean(pearsonsR[684:4675]),
+                                   'human_CAGE_pearsons': np.nanmean(pearsonsR[4675:])},
+                                  step=epoch_i)
+
+                        R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
+                        wandb.log({'human_all_tracks_R2': np.nanmean(R2),
+                                   'human_DNASE_R2': np.nanmean(R2[:684]),
+                                   'human_CHIP_R2': np.nanmean(R2[684:4675]),
+                                   'human_CAGE_R2': np.nanmean(R2[4675:])},
+                                  step=epoch_i)
+                    else:
+                        wandb.log({'human_val_loss': metric_dict['human_val'].result().numpy()},
+                                  step=epoch_i)
+                        pearsonsR=metric_dict['human_pearsonsR'].result()['PearsonR'].numpy()
+
+                        wandb.log({'human_all_tracks_pearsons': np.nanmean(pearsonsR),
+                                   'human_DNASE_pearsons': np.nanmean(pearsonsR[:674]),
+                                   'human_CHIP_pearsons': np.nanmean(pearsonsR[674:2058]),
+                                   'human_CAGE_pearsons': np.nanmean(pearsonsR[2058:])},
+                                  step=epoch_i)
+
+                        R2=metric_dict['human_R2'].result()['R2'].numpy()
+                        wandb.log({'human_all_tracks_R2': np.nanmean(R2),
+                                   'human_DNASE_R2': np.nanmean(R2[:674]),
+                                   'human_CHIP_R2': np.nanmean(R2[674:2058]),
+                                   'human_CAGE_R2': np.nanmean(R2[2058:])},
+                                  step=epoch_i)
+
+                    if epoch_i < wandb.config.fine_tune_epochs: 
+                        if wandb.config.heads_channels['mouse'] == 1643:
+                            wandb.log({'mouse_val_loss': metric_dict['mouse_val'].result().numpy()},
+                                      step=epoch_i)
+                            pearsonsR=metric_dict['mouse_pearsonsR'].result()['PearsonR'].numpy()
+
+                            wandb.log({'mouse_all_tracks_pearsons': np.nanmean(pearsonsR),
+                                       'mouse_DNASE_pearsons': np.nanmean(pearsonsR[:135]),
+                                       'mouse_CHIP_pearsons': np.nanmean(pearsonsR[135:1019]),
+                                       'mouse_CAGE_pearsons': np.nanmean(pearsonsR[1019:])},
                                       step=epoch_i)
 
-                            R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
-                            wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
-                                       organism+'_DNASE_R2': np.nanmean(R2[:684]),
-                                       organism+'_CHIP_R2': np.nanmean(R2[684:4675]),
-                                       organism+'_CAGE_R2': np.nanmean(R2[4675:])},
+                            R2=metric_dict['mouse_R2'].result()['R2'].numpy()
+                            wandb.log({'mouse_all_tracks_R2': np.nanmean(R2),
+                                       'mouse_DNASE_R2': np.nanmean(R2[:135]),
+                                       'mouse_CHIP_R2': np.nanmean(R2[135:1019]),
+                                       'mouse_CAGE_R2': np.nanmean(R2[1019:])},
                                       step=epoch_i)
                         else:
-                            wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
+                            wandb.log({'mouse_val_loss': metric_dict['mouse_val'].result().numpy()},
                                       step=epoch_i)
-                            pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
+                            pearsonsR=metric_dict['mouse_pearsonsR'].result()['PearsonR'].numpy()
 
-                            wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
-                                       organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:674]),
-                                       organism+'_CHIP_pearsons': np.nanmean(pearsonsR[674:2058]),
-                                       organism+'_CAGE_pearsons': np.nanmean(pearsonsR[2058:])},
+                            wandb.log({'mouse_all_tracks_pearsons': np.nanmean(pearsonsR),
+                                       'mouse_DNASE_pearsons': np.nanmean(pearsonsR[:135]),
+                                       'mouse_CHIP_pearsons': np.nanmean(pearsonsR[135:630]),
+                                       'mouse_CAGE_pearsons': np.nanmean(pearsonsR[630:])},
                                       step=epoch_i)
 
-                            R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
-                            wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
-                                       organism+'_DNASE_R2': np.nanmean(R2[:674]),
-                                       organism+'_CHIP_R2': np.nanmean(R2[674:2058]),
-                                       organism+'_CAGE_R2': np.nanmean(R2[2058:])},
+                            R2=metric_dict['mouse_R2'].result()['R2'].numpy()
+                            wandb.log({o'mouse_all_tracks_R2': np.nanmean(R2),
+                                       'mouse_DNASE_R2': np.nanmean(R2[:135]),
+                                       'mouse_CHIP_R2': np.nanmean(R2[135:630]),
+                                       'mouse_CAGE_R2': np.nanmean(R2[630:])},
                                       step=epoch_i)
-                    if organism == 'mouse':
-                        if epoch_i < wandb.config.fine_tune_epochs: 
-                            if wandb.config.heads_channels['mouse'] == 1643:
-                                wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
-                                          step=epoch_i)
-                                pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
-
-                                wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
-                                           organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:135]),
-                                           organism+'_CHIP_pearsons': np.nanmean(pearsonsR[135:1019]),
-                                           organism+'_CAGE_pearsons': np.nanmean(pearsonsR[1019:])},
-                                          step=epoch_i)
-
-                                R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
-                                wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
-                                           organism+'_DNASE_R2': np.nanmean(R2[:135]),
-                                           organism+'_CHIP_R2': np.nanmean(R2[135:1019]),
-                                           organism+'_CAGE_R2': np.nanmean(R2[1019:])},
-                                          step=epoch_i)
-                            else:
-                                wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
-                                          step=epoch_i)
-                                pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
-
-                                wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
-                                           organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:135]),
-                                           organism+'_CHIP_pearsons': np.nanmean(pearsonsR[135:630]),
-                                           organism+'_CAGE_pearsons': np.nanmean(pearsonsR[630:])},
-                                          step=epoch_i)
-
-                                R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
-                                wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
-                                           organism+'_DNASE_R2': np.nanmean(R2[:135]),
-                                           organism+'_CHIP_R2': np.nanmean(R2[135:630]),
-                                           organism+'_CAGE_R2': np.nanmean(R2[630:])},
-                                          step=epoch_i)
 
                 print('human_val_loss: ' + str(metric_dict['human_val'].result().numpy()))
                 val_losses.append(metric_dict['human_val'].result().numpy())
@@ -596,13 +593,14 @@ def main():
                 wandb.log({'gene_spec_mean_corrs': gene_spec_mean_corrs,
                            'cell_spec_mean_corrs': cell_spec_mean_corrs},
                           step=epoch_i)
-                try:
-                    wandb.log({'hg_OVERALL_TSS_predictions': fig_overall,
-                               'cross_dataset_dist': fig_cell_spec,
-                               'cross_gene_dist': fig_gene_spec},
-                              step=epoch_i)
-                except IndexError:
-                    pass
+                if fig_cell_spec is not None:
+                    try:
+                        wandb.log({'hg_OVERALL_TSS_predictions': fig_overall,
+                                   'cross_dataset_dist': fig_cell_spec,
+                                   'cross_gene_dist': fig_gene_spec},
+                                  step=epoch_i)
+                    except IndexError:
+                        pass
                 
                 end = time.time()
                 duration = (end - start) / 60.
