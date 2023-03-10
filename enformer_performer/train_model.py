@@ -503,7 +503,7 @@ def main():
                                    'human_CAGE_pearsons': np.nanmean(pearsonsR[4675:])},
                                   step=epoch_i)
 
-                        R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
+                        R2=metric_dict['human_R2'].result()['R2'].numpy()
                         wandb.log({'human_all_tracks_R2': np.nanmean(R2),
                                    'human_DNASE_R2': np.nanmean(R2[:684]),
                                    'human_CHIP_R2': np.nanmean(R2[684:4675]),
