@@ -36,14 +36,11 @@ from scipy.stats.stats import pearsonr
 from scipy.stats.stats import spearmanr  
 ## custom modules
 import metrics as metrics
-from optimizers import *
-import schedulers as schedulers
-
 from scipy import stats
 
 import enformer_vanilla as enformer
 
-resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='node-4')
+resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='node-1')
 tf.config.experimental_connect_to_cluster(resolver)
 tf.tpu.experimental.initialize_tpu_system(resolver)
 strategy = tf.distribute.TPUStrategy(resolver)
@@ -141,7 +138,7 @@ with strategy.scope():
     checkpoint_options = tf.train.CheckpointOptions(experimental_io_device="/job:localhost")
     checkpoint = tf.train.Checkpoint(module=model)#,options=options)
     tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
-    latest = tf.train.latest_checkpoint("/home/jupyter/dev/BE_CD69_paper_2022/enformer_fine_tuning/checkpoint/sonnet_weights/")
+    latest = tf.train.latest_checkpoint("gs://picard-testing-176520/sonnet_weights/sonnet_weights")
 
     checkpoint.restore(latest,options=checkpoint_options).assert_consumed()
     
@@ -173,7 +170,7 @@ with strategy.scope():
                               deterministic=False,
                               num_parallel_calls=4)
 
-        dataset=dataset.repeat(1).batch(8).prefetch(1)
+        dataset=dataset.repeat(2).batch(8).prefetch(1)
         val_dist= strategy.experimental_distribute_dataset(dataset)
         val_dist_it = iter(val_dist)
 

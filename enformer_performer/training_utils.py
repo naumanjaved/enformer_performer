@@ -130,152 +130,22 @@ def get_initializers(checkpoint_path):
     return initializers_dict
 
 
-def extract_batch_norm_stats(model):
-    gamma_names=[]
-    gamma_vars=[]
-    gamma_layer_num=[]
-    beta_names=[]
-    beta_vars=[]
-    beta_layer_num=[]
-    moving_means_names=[]
-    moving_means_vars=[]
-    moving_means_layer_num=[]
-    moving_vars_names=[]
-    moving_vars_vars=[]
-    moving_vars_layer_num=[]
-
-    all_vars=[(k,x.name,x) for k,x in enumerate(model.stem_res_conv.variables)]
-
-    for gamma_tuple in all_vars:
-        if 'sync_batch_normalization' in gamma_tuple[1]:
-
-            specific_var = gamma_tuple[1].split('/')[1].split(':')[0]
-            layer_num=0
-            var_name = specific_var + "_1"
-            if (('gamma' in var_name) or 'moving_variance' in var_name):
-                vals = list(np.log(1.0+gamma_tuple[-1].values[0].numpy()))
-            else:
-                vals = list(np.log(1.0+np.abs(gamma_tuple[-1].values[0].numpy())) * \
-                                    np.sign(gamma_tuple[-1].values[0].numpy()))
-            #print(vals)
-            names = []
-            layer_nums=[]
-            for variable_val in vals:
-                names.append(var_name)
-                layer_nums.append(layer_num)
-            if 'gamma' in var_name:
-                gamma_names += names
-                gamma_vars += vals
-                gamma_layer_num += layer_nums
-            if 'beta' in var_name:
-                beta_names += names
-                beta_vars += vals
-                beta_layer_num += layer_nums
-            if 'moving_mean' in var_name:
-                moving_means_names += names
-                moving_means_vars += vals
-                moving_means_layer_num += layer_nums
-            if 'moving_variance' in var_name:
-                moving_vars_names += names
-                moving_vars_vars += vals    
-                moving_vars_layer_num += layer_nums
-
-
-    all_vars=[(k,x.name,x) for k,x in enumerate(model.conv_tower.variables)]
-
-    for gamma_tuple in all_vars:
-        if 'sync_batch_normalization' in gamma_tuple[1]:
-            specific_var = gamma_tuple[1].split('/')[1].split(':')[0]
-            layer_num= int(gamma_tuple[1].split('/')[0].split('_')[-1])+1
-
-            var_name = specific_var + "_" + str(layer_num)
-            if (('gamma' in var_name) or 'moving_variance' in var_name):
-                vals = list(np.log(1.0+gamma_tuple[-1].values[0].numpy()))
-            else:
-                vals = list(np.log(1.0+np.abs(gamma_tuple[-1].values[0].numpy())) * \
-                                    np.sign(gamma_tuple[-1].values[0].numpy()))
-
-            names = []
-            layer_nums=[]
-            for variable_val in vals:
-                names.append(var_name)
-                layer_nums.append(layer_num)
-            if 'gamma' in var_name:
-                gamma_names += names
-                gamma_vars += vals
-                gamma_layer_num += layer_nums
-            if 'beta' in var_name:
-                beta_names += names
-                beta_vars += vals
-                beta_layer_num += layer_nums
-            if 'moving_mean' in var_name:
-                moving_means_names += names
-                moving_means_vars += vals
-                moving_means_layer_num += layer_nums
-            if 'moving_variance' in var_name:
-                moving_vars_names += names
-                moving_vars_vars += vals    
-                moving_vars_layer_num += layer_nums
-    
-
-    gamma_df=pd.DataFrame(list(zip(gamma_names, gamma_vars,gamma_layer_num)), columns =['layer', 'values','layer_num'])
-    gamma_df=gamma_df.sort_values(by="layer_num",ascending=False)
-    fig_gamma,ax_gamma=plt.subplots(figsize=(6,6))
-    sns.kdeplot(data=gamma_df, x="values", hue="layer")
-    plt.xlabel("log(1.0+gamma)")
-    plt.ylabel("count")
-    plt.title("batch_norm_gamma")
-    
-    beta_df=pd.DataFrame(list(zip(beta_names, beta_vars,beta_layer_num)), columns =['layer', 'values','layer_num'])
-    beta_df=beta_df.sort_values(by="layer_num",ascending=False)
-    fig_beta,ax_beta=plt.subplots(figsize=(6,6))
-    sns.kdeplot(data=beta_df, x="values", hue="layer")
-    plt.xlabel("log(1.0+|beta|)*sign(beta)")
-    plt.ylabel("count")
-    plt.title("batch_norm_beta")
-
-    moving_means_df=pd.DataFrame(list(zip(moving_means_names, moving_means_vars,moving_means_layer_num)), columns =['layer', 'values','layer_num'])
-    moving_means_df=moving_means_df.sort_values(by="layer_num",ascending=False)
-    fig_moving_means,ax_moving_means=plt.subplots(figsize=(6,6))
-    sns.kdeplot(data=moving_means_df, x="values", hue="layer")
-    plt.xlabel("log(1.0+|moving_mean|)*sign(moving_mean)")
-    plt.ylabel("count")
-    plt.title("batch_norm_moving_mean")
-    
-    moving_vars_df=pd.DataFrame(list(zip(moving_vars_names, moving_vars_vars,moving_vars_layer_num)), columns =['layer', 'values','layer_num'])
-    moving_vars_df=moving_vars_df.sort_values(by="layer_num",ascending=False)
-    fig_moving_vars,ax_moving_vars=plt.subplots(figsize=(6,6))
-    sns.kdeplot(data=moving_vars_df, x="values", hue="layer")
-    plt.xlabel("log(1.0+moving_variance)")
-    plt.ylabel("count")
-    plt.title("batch_norm_moving_var")
-    
-    return fig_gamma, fig_beta, fig_moving_means,fig_moving_vars
-
-
 def return_train_val_functions(model,
                                    train_steps_human,
                                    organism_dict,
-                                       val_steps_h,
-                                       val_steps_m,
+                                   val_steps_h,
+                                   val_steps_m,
                                    val_steps_TSS,
                                    optimizers_in,
                                    cage_start_index,
                                    strategy,
                                    metric_dict,
                                    global_batch_size,
-                                   gradient_clip,
-                                   batch_size_per_rep,
-                                   loss_fn_main='poisson'):
+                                   gradient_clip):
     
     
-    if loss_fn_main == 'mse':
-        loss_fn = tf.keras.losses.MeanSquaredError(reduction=tf.keras.losses.Reduction.NONE)
-    elif loss_fn_main == 'poisson':
-        loss_fn = tf.keras.losses.Poisson(reduction=tf.keras.losses.Reduction.NONE)
-    else:
-        raise ValueError('loss_fn_not_implemented')
-
+    loss_fn = tf.keras.losses.Poisson(reduction=tf.keras.losses.Reduction.NONE)
+    
     optimizer1,optimizer2=optimizers_in
     
     metric_dict["hg_corr_stats"] = metrics.correlation_stats_gene_centered(name='hg_corr_stats')
@@ -297,15 +167,11 @@ def return_train_val_functions(model,
         metric_dict[organism + '_pearsonsR'] = metrics.MetricDict({'PearsonR': metrics.PearsonR(reduce_axis=(0,1))})
         metric_dict[organism + '_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
 
-    #train_steps, val_steps = steps_tuple
 
-    
-    def dist_train_step(iters):
-        iter_human = iters[0]
-
+    def dist_train_step(iter_human,iter_mouse):
         @tf.function(jit_compile=True)
         def train_step_h(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            sequence=tf.cast(inputs['sequence'],dtype=tf.bfloat16)
             target=tf.cast(inputs['target'],dtype=tf.float32)
 
             with tf.GradientTape(watch_accessed_variables=False) as tape:
@@ -336,7 +202,7 @@ def return_train_val_functions(model,
             
         @tf.function(jit_compile=True)
         def train_step_m(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            sequence=tf.cast(inputs['sequence'],dtype=tf.bfloat16)
             target=tf.cast(inputs['target'],dtype=tf.float32)
 
             with tf.GradientTape(watch_accessed_variables=False) as tape:
@@ -364,18 +230,17 @@ def return_train_val_functions(model,
             optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
                                            remaining_vars))
             metric_dict["mouse_tr"].update_state(loss)
- 
             
         for _ in tf.range(train_steps_human):
             strategy.run(train_step_h,
                          args=(next(iter_human),))
             strategy.run(train_step_m,
-                         args=(next(iters[1]),))
+                         args=(next(iter_mouse),))
             
     def dist_val_step_h(iterator):
         @tf.function(jit_compile=True)
         def val_step(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            sequence=tf.cast(inputs['sequence'],dtype=tf.bfloat16)
             target=tf.cast(inputs['target'],dtype=tf.float32)
 
             output = model(sequence,
@@ -387,7 +252,6 @@ def return_train_val_functions(model,
             metric_dict['human_pearsonsR'].update_state(target, output)
             metric_dict['human_R2'].update_state(target, output)
             
-            
         for _ in tf.range(val_steps_h): ## for loop within @tf.fuction for improved TPU performance
             strategy.run(val_step,
                          args=(next(iterator),))
@@ -395,7 +259,7 @@ def return_train_val_functions(model,
     def dist_val_step_m(iterator):
         @tf.function(jit_compile=True)
         def val_step(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+            sequence=tf.cast(inputs['sequence'],dtype=tf.bfloat16)
             target=tf.cast(inputs['target'],dtype=tf.float32)
 
             output = model(sequence,
@@ -416,7 +280,7 @@ def return_train_val_functions(model,
         def val_step(inputs):
             target = inputs['target'][:,:,cage_start_index:]
 
-            sequence=tf.cast(inputs['sequence'], dtype=tf.float32)
+            sequence=tf.cast(inputs['sequence'], dtype=tf.bfloat16)
 
             tss_mask = tf.cast(inputs['tss_mask'],dtype=tf.float32)
             gene_name = inputs['gene_name']
@@ -474,64 +338,25 @@ def return_train_val_functions(model,
     return dist_train_step,dist_val_step_h,dist_val_step_m,dist_val_step_TSS,\
             build_step, metric_dict
 
-
-def return_train_val_functions_3(model,
-                                   train_steps_human,
-                                   organism_dict,
-                                       val_steps_h,
-                                       val_steps_m,
-                                   val_steps_TSS,
-                                   optimizers_in,
-                                   cage_start_index,
-                                   strategy,
-                                   metric_dict,
-                                   global_batch_size,
-                                   gradient_clip,
-                                   batch_size_per_rep,
-                                   loss_fn_main='poisson'):
+def return_train_val_functions_human(model,
+                                       train_steps_human,
+                                       organism_dict,
+                                       optimizers_in,
+                                       strategy,
+                                       metric_dict,
+                                       global_batch_size,
+                                       gradient_clip):
     
     
-    if loss_fn_main == 'mse':
-        loss_fn = tf.keras.losses.MeanSquaredError(reduction=tf.keras.losses.Reduction.NONE)
-    elif loss_fn_main == 'poisson':
-        loss_fn = tf.keras.losses.Poisson(reduction=tf.keras.losses.Reduction.NONE)
-    else:
-        raise ValueError('loss_fn_not_implemented')
+    loss_fn = tf.keras.losses.Poisson(reduction=tf.keras.losses.Reduction.NONE)
 
     optimizer1,optimizer2=optimizers_in
     
-    metric_dict["hg_corr_stats"] = metrics.correlation_stats_gene_centered(name='hg_corr_stats')
-    metric_dict["human_tr"] = tf.keras.metrics.Mean("human_tr_loss",
-                                                 dtype=tf.float32)
-    metric_dict["human_val"] = tf.keras.metrics.Mean("human_val_loss",
-                                                  dtype=tf.float32)
-    metric_dict['human_pearsonsR'] = metrics.MetricDict({'PearsonR': metrics.PearsonR(reduce_axis=(0,1))})
-    metric_dict['human_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
-    
-    for organism in organism_dict.keys():
-        if organism == 'human':
-            continue
-        
-        metric_dict[organism + "_tr"] = tf.keras.metrics.Mean(organism + "_tr_loss",
-                                                     dtype=tf.float32)
-        metric_dict[organism + "_val"] = tf.keras.metrics.Mean(organism + "_val_loss",
-                                                      dtype=tf.float32)
-        metric_dict[organism + '_pearsonsR'] = metrics.MetricDict({'PearsonR': metrics.PearsonR(reduce_axis=(0,1))})
-        metric_dict[organism + '_R2'] = metrics.MetricDict({'R2': metrics.R2(reduce_axis=(0,1))})
-
-    #train_steps, val_steps = steps_tuple
-
-    
-    def dist_train_step(iters):
-        iter_human = iters[0]
-        # iter_mouse = iters[1]
-        # iter_rhesus = iters[2]
-        # iter_rat = iters[3]
-        # iter_canine = iters[4]
+    def dist_train_step(iter_human):
         
         @tf.function(jit_compile=True)
-        def train_step_h(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
+        def train_step(inputs):
+            sequence=tf.cast(inputs['sequence'],dtype=tf.bfloat16)
             target=tf.cast(inputs['target'],dtype=tf.float32)
 
             with tf.GradientTape(watch_accessed_variables=False) as tape:
@@ -560,176 +385,11 @@ def return_train_val_functions_3(model,
                                            remaining_vars))
             metric_dict["human_tr"].update_state(loss)
             
-        @tf.function(jit_compile=True)
-        def train_step_m(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
-
-            with tf.GradientTape(watch_accessed_variables=False) as tape:
-                conv_vars = model.stem_conv.trainable_variables + \
-                            model.stem_res_conv.trainable_variables + \
-                            model.stem_pool.trainable_variables + \
-                            model.conv_tower.trainable_variables
-                remaining_vars = model.performer.trainable_variables + \
-                                    model.final_pointwise_conv.trainable_variables + \
-                                    model.heads.trainable_variables
-                vars_all = conv_vars + remaining_vars
-                for var in vars_all:
-                    tape.watch(var)
-                output = model(sequence,
-                               training=True)["mouse"]
-
-                output = tf.cast(output,dtype=tf.float32)
-                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            gradients = tape.gradient(loss, vars_all)
-            gradients, _ = tf.clip_by_global_norm(gradients, 
-                                                  gradient_clip)
-            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
-                                           conv_vars))
-            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
-                                           remaining_vars))
-            metric_dict["mouse_tr"].update_state(loss)
-            
-        @tf.function(jit_compile=True)
-        def train_step_rh(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
-
-            with tf.GradientTape(watch_accessed_variables=False) as tape:
-                conv_vars = model.stem_conv.trainable_variables + \
-                            model.stem_res_conv.trainable_variables + \
-                            model.stem_pool.trainable_variables + \
-                            model.conv_tower.trainable_variables
-                remaining_vars = model.performer.trainable_variables + \
-                                    model.final_pointwise_conv.trainable_variables + \
-                                    model.heads.trainable_variables
-                vars_all = conv_vars + remaining_vars
-                for var in vars_all:
-                    tape.watch(var)
-                output = model(sequence,
-                               training=True)["rhesus"]
-
-                output = tf.cast(output,dtype=tf.float32)
-                loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            gradients = tape.gradient(loss, vars_all)
-            gradients, _ = tf.clip_by_global_norm(gradients, 
-                                                  gradient_clip)
-            optimizer1.apply_gradients(zip(gradients[:len(conv_vars)], 
-                                           conv_vars))
-            optimizer2.apply_gradients(zip(gradients[len(conv_vars):], 
-                                           remaining_vars))
-            metric_dict["rhesus_tr"].update_state(loss)
-
-            
         for _ in tf.range(train_steps_human):
-            strategy.run(train_step_h,
+            strategy.run(train_step,
                          args=(next(iter_human),))
-            strategy.run(train_step_m,
-                         args=(next(iters[1]),))
-            strategy.run(train_step_rh,
-                     args=(next(iters[2]),))
-
-    def dist_val_step_h(iterator):
-        @tf.function(jit_compile=True)
-        def val_step(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
-
-            output = model(sequence,
-                           training=False)['human']
-            output = tf.cast(output,dtype=tf.float32)
-            loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            metric_dict["human_val"].update_state(loss)
-            metric_dict['human_pearsonsR'].update_state(target, output)
-            metric_dict['human_R2'].update_state(target, output)
-        for _ in tf.range(val_steps_h): ## for loop within @tf.fuction for improved TPU performance
-            strategy.run(val_step,
-                         args=(next(iterator),))
-        
-    def dist_val_step_m(iterator):
-        @tf.function(jit_compile=True)
-        def val_step(inputs):
-            sequence=tf.cast(inputs['sequence'],dtype=tf.float32)
-            target=tf.cast(inputs['target'],dtype=tf.float32)
-
-            output = model(sequence,
-                           training=False)['mouse']
-            output = tf.cast(output,dtype=tf.float32)
-            loss = tf.math.reduce_mean(loss_fn(target,output)) * (1. / global_batch_size)
-
-            metric_dict["mouse_val"].update_state(loss)
-            metric_dict['mouse_pearsonsR'].update_state(target, output)
-            metric_dict['mouse_R2'].update_state(target, output)
-        for _ in tf.range(val_steps_m): ## for loop within @tf.fuction for improved TPU performance
-            strategy.run(val_step,
-                         args=(next(iterator),))
-            
                 
-    def dist_val_step_TSS(iterator): #input_batch, model, optimizer, organism, gradient_clip):
-        @tf.function(jit_compile=True)
-        def val_step(inputs):
-            target = inputs['target'][:,:,cage_start_index:]
-
-            sequence=tf.cast(inputs['sequence'], dtype=tf.float32)
-
-            tss_mask = tf.cast(inputs['tss_mask'],dtype=tf.float32)
-            gene_name = inputs['gene_name']
-
-            cell_types = inputs['cell_types']
-            output = model(sequence,training=False)['human'][:,:,cage_start_index:]
-            
-            pred = tf.reduce_sum(tf.cast(output,dtype=tf.float32) * tss_mask,axis=1)
-            true = tf.reduce_sum(tf.cast(target,dtype=tf.float32) * tss_mask,axis=1)
-            
-            return pred,true,gene_name,cell_types
-
-
-        ta_pred = tf.TensorArray(tf.float32, size=0, dynamic_size=True) # tensor array to store preds
-        ta_true = tf.TensorArray(tf.float32, size=0, dynamic_size=True) # tensor array to store vals
-        ta_celltype = tf.TensorArray(tf.int32, size=0, dynamic_size=True) # tensor array to store preds
-        ta_genemap = tf.TensorArray(tf.int32, size=0, dynamic_size=True)        
-
-        for _ in tf.range(val_steps_TSS): ## for loop within @tf.fuction for improved TPU performance
-
-            pred_rep, true_rep, gene_rep, cell_type_rep = strategy.run(val_step,
-                                                                       args=(next(iterator),))
-            
-            pred_reshape = tf.reshape(strategy.gather(pred_rep, axis=0), [-1]) # reshape to 1D
-            true_reshape = tf.reshape(strategy.gather(true_rep, axis=0), [-1])
-            cell_type_reshape = tf.reshape(strategy.gather(cell_type_rep, axis=0), [-1])
-            gene_map_reshape = tf.reshape(strategy.gather(gene_rep, axis=0), [-1])
-            
-            ta_pred = ta_pred.write(_, pred_reshape)
-            ta_true = ta_true.write(_, true_reshape)
-            ta_celltype = ta_celltype.write(_, cell_type_reshape)
-            ta_genemap = ta_genemap.write(_, gene_map_reshape)
-        metric_dict["hg_corr_stats"].update_state(ta_true.concat(),
-                                                  ta_pred.concat(),
-                                                  ta_celltype.concat(),
-                                                  ta_genemap.concat())
-        ta_true.close()
-        ta_pred.close()
-        ta_celltype.close()
-        ta_genemap.close()
-
-    def build_step(iterator): #input_batch, model, optimizer, organism, gradient_clip):
-        @tf.function(jit_compile=True)
-        def val_step(inputs):
-            target=tf.cast(inputs['target'],
-                           dtype = tf.float32)
-            sequence=tf.cast(inputs['sequence'],
-                             dtype=tf.float32)
-            output = model(sequence, training=False)['human']
-
-        for _ in tf.range(1): ## for loop within @tf.fuction for improved TPU performance
-            strategy.run(val_step, args=(next(iterator),))
-    
-
-    return dist_train_step,dist_val_step_h,dist_val_step_m,dist_val_step_TSS,\
-            build_step, metric_dict
+    return dist_train_step
 
 
 def deserialize_tr(serialized_example, 
@@ -921,6 +581,7 @@ def return_dataset(gcs_path,
                                                             g),
                               deterministic=False,
                               num_parallel_calls=num_parallel)
+        return dataset.repeat(num_epoch).batch(batch,drop_remainder=True).prefetch(1)
         
     else:
         if not tss_bool:
@@ -943,7 +604,7 @@ def return_dataset(gcs_path,
                                   deterministic=False,
                                   num_parallel_calls=num_parallel)
 
-    return dataset.repeat(num_epoch).batch(batch,drop_remainder=True).prefetch(1)
+        return dataset.batch(batch,drop_remainder=True).prefetch(1).repeat(num_epoch)
 
 
 
@@ -1053,7 +714,7 @@ def make_plots(y_trues,
     results_df = pd.DataFrame()
     results_df['true'] = y_trues
     results_df['pred'] = y_preds
-    results_df['gene_encoding'] =gene_map
+    results_df['gene_encoding'] = gene_map
     results_df['cell_type_encoding'] = cell_types
     
     results_df=results_df.groupby(['gene_encoding', 'cell_type_encoding']).agg({'true': 'sum', 'pred': 'sum'})
@@ -1066,6 +727,8 @@ def make_plots(y_trues,
     true_zscore=results_df[['true_zscore']].to_numpy()[:,0]
 
     pred_zscore=results_df[['pred_zscore']].to_numpy()[:,0]
+    
+    print('computed scores')
 
     try: 
         cell_specific_corrs=results_df.groupby('cell_type_encoding')[['true_zscore','pred_zscore']].corr(method='pearson').unstack().iloc[:,1].tolist()
@@ -1084,7 +747,7 @@ def make_plots(y_trues,
     fig_overall,ax_overall=plt.subplots(figsize=(6,6))
     
     ## scatter plot for 50k points max
-    idx = np.random.choice(np.arange(len(true_zscore)), 20000, replace=False)
+    idx = np.random.choice(np.arange(len(true_zscore)), 5000, replace=False)
     
     data = np.vstack([true_zscore[idx],
                       pred_zscore[idx]])
@@ -1404,16 +1067,26 @@ def parse_args(parser):
                         type=str,
                         default="True",
                         help= 'use_max_pool')
+    parser.add_argument('--learnable_PE',
+                        dest='learnable_PE',
+                        type=str,
+                        default="True",
+                        help= 'learnable_PE')
     parser.add_argument('--optimizer',
                         dest='optimizer',
                         type=str,
                         default="adamW",
                         help= 'optimizer')
-    parser.add_argument('--block_type',
-                        dest='block_type',
+    parser.add_argument('--human_fine_tune',
+                        dest='human_fine_tune',
                         type=str,
-                        default="group_norm",
-                        help= 'block_type')
+                        default="True",
+                        help= 'human_fine_tune')
+    parser.add_argument('--fine_tune_epochs',
+                        dest='fine_tune_epochs',
+                        type=int,
+                        default=2,
+                        help= 'fine_tune_epochs')
     args = parser.parse_args()
     return parser
 
@@ -1467,3 +1140,125 @@ def log2(x):
 
 
 
+
+def extract_batch_norm_stats(model):
+    gamma_names=[]
+    gamma_vars=[]
+    gamma_layer_num=[]
+    beta_names=[]
+    beta_vars=[]
+    beta_layer_num=[]
+    moving_means_names=[]
+    moving_means_vars=[]
+    moving_means_layer_num=[]
+    moving_vars_names=[]
+    moving_vars_vars=[]
+    moving_vars_layer_num=[]
+
+    all_vars=[(k,x.name,x) for k,x in enumerate(model.stem_res_conv.variables)]
+
+    for gamma_tuple in all_vars:
+        if 'sync_batch_normalization' in gamma_tuple[1]:
+
+            specific_var = gamma_tuple[1].split('/')[1].split(':')[0]
+            layer_num=0
+            var_name = specific_var + "_1"
+            if (('gamma' in var_name) or 'moving_variance' in var_name):
+                vals = list(np.log(1.0+gamma_tuple[-1].values[0].numpy()))
+            else:
+                vals = list(np.log(1.0+np.abs(gamma_tuple[-1].values[0].numpy())) * \
+                                    np.sign(gamma_tuple[-1].values[0].numpy()))
+            #print(vals)
+            names = []
+            layer_nums=[]
+            for variable_val in vals:
+                names.append(var_name)
+                layer_nums.append(layer_num)
+            if 'gamma' in var_name:
+                gamma_names += names
+                gamma_vars += vals
+                gamma_layer_num += layer_nums
+            if 'beta' in var_name:
+                beta_names += names
+                beta_vars += vals
+                beta_layer_num += layer_nums
+            if 'moving_mean' in var_name:
+                moving_means_names += names
+                moving_means_vars += vals
+                moving_means_layer_num += layer_nums
+            if 'moving_variance' in var_name:
+                moving_vars_names += names
+                moving_vars_vars += vals    
+                moving_vars_layer_num += layer_nums
+
+
+    all_vars=[(k,x.name,x) for k,x in enumerate(model.conv_tower.variables)]
+
+    for gamma_tuple in all_vars:
+        if 'sync_batch_normalization' in gamma_tuple[1]:
+            specific_var = gamma_tuple[1].split('/')[1].split(':')[0]
+            layer_num= int(gamma_tuple[1].split('/')[0].split('_')[-1])+1
+
+            var_name = specific_var + "_" + str(layer_num)
+            if (('gamma' in var_name) or 'moving_variance' in var_name):
+                vals = list(np.log(1.0+gamma_tuple[-1].values[0].numpy()))
+            else:
+                vals = list(np.log(1.0+np.abs(gamma_tuple[-1].values[0].numpy())) * \
+                                    np.sign(gamma_tuple[-1].values[0].numpy()))
+
+            names = []
+            layer_nums=[]
+            for variable_val in vals:
+                names.append(var_name)
+                layer_nums.append(layer_num)
+            if 'gamma' in var_name:
+                gamma_names += names
+                gamma_vars += vals
+                gamma_layer_num += layer_nums
+            if 'beta' in var_name:
+                beta_names += names
+                beta_vars += vals
+                beta_layer_num += layer_nums
+            if 'moving_mean' in var_name:
+                moving_means_names += names
+                moving_means_vars += vals
+                moving_means_layer_num += layer_nums
+            if 'moving_variance' in var_name:
+                moving_vars_names += names
+                moving_vars_vars += vals    
+                moving_vars_layer_num += layer_nums
+    
+
+    gamma_df=pd.DataFrame(list(zip(gamma_names, gamma_vars,gamma_layer_num)), columns =['layer', 'values','layer_num'])
+    gamma_df=gamma_df.sort_values(by="layer_num",ascending=False)
+    fig_gamma,ax_gamma=plt.subplots(figsize=(6,6))
+    sns.kdeplot(data=gamma_df, x="values", hue="layer")
+    plt.xlabel("log(1.0+gamma)")
+    plt.ylabel("count")
+    plt.title("batch_norm_gamma")
+    
+    beta_df=pd.DataFrame(list(zip(beta_names, beta_vars,beta_layer_num)), columns =['layer', 'values','layer_num'])
+    beta_df=beta_df.sort_values(by="layer_num",ascending=False)
+    fig_beta,ax_beta=plt.subplots(figsize=(6,6))
+    sns.kdeplot(data=beta_df, x="values", hue="layer")
+    plt.xlabel("log(1.0+|beta|)*sign(beta)")
+    plt.ylabel("count")
+    plt.title("batch_norm_beta")
+
+    moving_means_df=pd.DataFrame(list(zip(moving_means_names, moving_means_vars,moving_means_layer_num)), columns =['layer', 'values','layer_num'])
+    moving_means_df=moving_means_df.sort_values(by="layer_num",ascending=False)
+    fig_moving_means,ax_moving_means=plt.subplots(figsize=(6,6))
+    sns.kdeplot(data=moving_means_df, x="values", hue="layer")
+    plt.xlabel("log(1.0+|moving_mean|)*sign(moving_mean)")
+    plt.ylabel("count")
+    plt.title("batch_norm_moving_mean")
+    
+    moving_vars_df=pd.DataFrame(list(zip(moving_vars_names, moving_vars_vars,moving_vars_layer_num)), columns =['layer', 'values','layer_num'])
+    moving_vars_df=moving_vars_df.sort_values(by="layer_num",ascending=False)
+    fig_moving_vars,ax_moving_vars=plt.subplots(figsize=(6,6))
+    sns.kdeplot(data=moving_vars_df, x="values", hue="layer")
+    plt.xlabel("log(1.0+moving_variance)")
+    plt.ylabel("count")
+    plt.title("batch_norm_moving_var")
+    
+    return fig_gamma, fig_beta, fig_moving_means,fig_moving_vars

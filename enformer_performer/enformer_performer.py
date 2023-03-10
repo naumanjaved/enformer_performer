@@ -48,8 +48,8 @@ class enformer_performer(tf.keras.Model):
                  normalize=True,
                  seed=5,
                  name: str = 'enformer_performer',
+                 learnable_PE=True,
                  use_max_pool=False,
-                 block_type='group_norm',
                  **kwargs):
         """ 'enformer_performer' model based on Enformer for predicting RNA-seq from atac + sequence
         Args: to do 
@@ -86,10 +86,10 @@ class enformer_performer(tf.keras.Model):
         self.BN_momentum=BN_momentum
         #self.use_enf_conv_block=use_enf_conv_block
         #self.use_LN_only=use_LN_only
-        self.block_type=block_type
         self.use_max_pool=use_max_pool
         self.out_length=out_length
         self.target_length=target_length
+        self.learnable_PE=learnable_PE
         
         if self.load_init:
             self.filter_list= [768,896,1024,1152,1280,1536]
@@ -104,178 +104,40 @@ class enformer_performer(tf.keras.Model):
         else:
             raise ValueError
         
-        if self.block_type == 'enformer':
-            def conv_block(filters, 
-                               width=1, 
-                               padding='same', 
-                               name='conv_block',
-                               w_init='lecun_normal',
-                               b_init='zeros',
-                               beta_init=None,
-                               gamma_init=None,
-                               mean_init=None,
-                               var_init=None,
-                               kernel_init=None,
-                               bias_init=None,
-                               train=True,
-                               **kwargs):
-                return tf.keras.Sequential([
-                    syncbatchnorm(axis=-1,
-                                  center=True,
-                                  scale=True,
-                                  beta_initializer=beta_init if self.load_init else "zeros",
-                                  gamma_initializer=gamma_init if self.load_init else "ones",
-                                  trainable=train,
-                                  momentum=self.BN_momentum,
-                                  epsilon=1.0e-05,
-                                  moving_mean_initializer=mean_init if self.load_init else "zeros",
-                                  moving_variance_initializer=var_init if self.load_init else "ones",
-                                  **kwargs),
-                    tfa.layers.GELU(),
-                    kl.Conv1D(filters,
-                              kernel_size=width,
-                              kernel_initializer=kernel_init if self.load_init else w_init,
-                              bias_initializer=bias_init if self.load_init else b_init,
-                              trainable=train,
-                              use_bias=True,
-                              padding=padding, **kwargs)
-                ], name=name)
+        def conv_block(filters, 
+                           width=1, 
+                           padding='same', 
+                           name='conv_block',
+                           w_init='lecun_normal',
+                           b_init='zeros',
+                           beta_init=None,
+                           gamma_init=None,
+                           mean_init=None,
+                           var_init=None,
+                           kernel_init=None,
+                           bias_init=None,
+                           train=True,
+                           **kwargs):
+            return tf.keras.Sequential([
+                sync_batch_norm_fp32(
+                              beta_init=beta_init if self.load_init else "zeros",
+                              gamma_init=gamma_init if self.load_init else "ones",
+                              train=train,
+                              momentum=self.BN_momentum,
+                              epsilon=1.0e-05,
+                              mean_init=mean_init if self.load_init else "zeros",
+                              var_init=var_init if self.load_init else "ones",
+                              **kwargs),
+                tfa.layers.GELU(),
+                kl.Conv1D(filters,
+                          kernel_size=width,
+                          kernel_initializer=kernel_init if self.load_init else w_init,
+                          bias_initializer=bias_init if self.load_init else b_init,
+                          trainable=train,
+                          use_bias=True,
+                          padding=padding, **kwargs)
+            ], name=name)
         
-        elif self.block_type == 'enformer_nosync':
-            def conv_block(filters, 
-                               width=1, 
-                               padding='same', 
-                               name='conv_block',
-                               w_init='lecun_normal',
-                               b_init='zeros',
-                               beta_init=None,
-                               gamma_init=None,
-                               mean_init=None,
-                               var_init=None,
-                               kernel_init=None,
-                               bias_init=None,
-                               train=True,
-                               **kwargs):
-                return tf.keras.Sequential([
-                    kl.BatchNormalization(axis=-1,
-                                  center=True,
-                                  scale=True,
-                                  beta_initializer=beta_init if self.load_init else "zeros",
-                                  gamma_initializer=gamma_init if self.load_init else "ones",
-                                  trainable=train,
-                                  momentum=self.BN_momentum,
-                                  epsilon=1.0e-05,
-                                  moving_mean_initializer=mean_init if self.load_init else "zeros",
-                                  moving_variance_initializer=var_init if self.load_init else "ones",
-                                  **kwargs),
-                    tfa.layers.GELU(),
-                    kl.Conv1D(filters,
-                              kernel_size=width,
-                              kernel_initializer=kernel_init if self.load_init else w_init,
-                              bias_initializer=bias_init if self.load_init else b_init,
-                              trainable=train,
-                              use_bias=True,
-                              padding=padding, **kwargs)
-                ], name=name)
-        
-        elif self.block_type == 'normal_style':
-            def conv_block(filters, 
-                               width=1, 
-                               w_init='lecun_normal', 
-                               b_init='zeros',
-                               padding='same', 
-                               name='conv_block',
-                               beta_init=None,
-                               gamma_init=None,
-                               mean_init=None,
-                               var_init=None,
-                               kernel_init=None,
-                               bias_init=None,
-                               train=True,
-                               **kwargs):
-                return tf.keras.Sequential([
-                    kl.Conv1D(filters,
-                             kernel_size=width,
-                             kernel_initializer='lecun_normal',
-                             bias_initializer='zeros',
-                              use_bias=True,
-                             padding='same', **kwargs),
-                    syncbatchnorm(axis=-1,
-                                  center=True,
-                                  scale=True,
-                                  trainable=train,
-                                  epsilon=1.0e-05,
-                                  beta_initializer="zeros",
-                                  gamma_initializer="ones",
-                                  momentum=self.BN_momentum,
-                                  moving_mean_initializer="zeros",
-                                  moving_variance_initializer="ones",
-                                  **kwargs),
-                    tfa.layers.GELU()
-                ], name=name)
-        elif self.block_type == 'normal_style_relu':
-            def conv_block(filters, 
-                               width=1, 
-                               w_init='lecun_normal', 
-                               b_init='zeros',
-                               padding='same', 
-                               name='conv_block',
-                               beta_init=None,
-                               gamma_init=None,
-                               mean_init=None,
-                               var_init=None,
-                               kernel_init=None,
-                               bias_init=None,
-                               train=True,
-                               **kwargs):
-                return tf.keras.Sequential([
-                    kl.Conv1D(filters,
-                             kernel_size=width,
-                             kernel_initializer='lecun_normal',
-                             bias_initializer='zeros',
-                              use_bias=True,
-                             padding='same', **kwargs),
-                    syncbatchnorm(axis=-1,
-                                  center=True,
-                                  scale=True,
-                                  trainable=train,
-                                  epsilon=1.0e-05,
-                                  beta_initializer="zeros",
-                                  gamma_initializer="ones",
-                                  momentum=self.BN_momentum,
-                                  moving_mean_initializer="zeros",
-                                  moving_variance_initializer="ones",
-                                  **kwargs),
-                    kl.ReLU()
-                ], name=name)
-        elif self.block_type == 'group_norm':
-            def conv_block(filters, 
-                               width=1, 
-                               w_init='lecun_normal', 
-                               b_init='zeros',
-                               padding='same', 
-                               name='conv_block',
-                               beta_init=None,
-                               gamma_init=None,
-                               mean_init=None,
-                               var_init=None,
-                               kernel_init=None,
-                               bias_init=None,
-                               train=True,
-                               **kwargs):
-                return tf.keras.Sequential([
-                    kl.Conv1D(filters,
-                             kernel_size=width,
-                             kernel_initializer='lecun_normal',
-                             bias_initializer='zeros',
-                              use_bias=True,
-                             padding='same', **kwargs),
-                    tfa.layers.GroupNormalization(
-                        groups = 128,
-                        axis=-1),
-                    kl.ReLU()], name=name)
-        else:
-            raise ValueError
 
         ### conv stack for sequence inputs
         self.stem_conv = kl.Conv1D(filters= int(self.filter_list[-1]) // 2,
@@ -367,6 +229,11 @@ class enformer_performer(tf.keras.Model):
 
         self.sin_pe = abs_sin_PE(name='sin_pe',
                                   **kwargs)
+        
+        self.pos_embedding_learned = tf.keras.layers.Embedding(self.max_seq_length,
+                                                               self.hidden_size, 
+                                                               input_length=self.max_seq_length)
+        
         if stable_variant:
             self.performer = Performer_Encoder_stable(num_layers=self.num_transformer_layers,
                                                num_heads=self.num_heads,
@@ -438,7 +305,13 @@ class enformer_performer(tf.keras.Model):
                            training=training)
         x = self.conv_tower(x,
                             training=training)
-        x = self.sin_pe(x)
+        if self.learnable_PE:
+            input_pos_indices = tf.range(1,self.max_seq_length+1)
+            PE = self.pos_embedding_learned(input_pos_indices)
+            x = x + PE
+        else:
+            x = self.sin_pe(x)
+
         x,att_matrices = self.performer(x,
                            training=training)
         x = self.crop_final(x)

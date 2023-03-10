@@ -61,11 +61,11 @@ def parse_dict_input_tuple(input_str,global_batch_size):
     if ';' in input_str:
         dict_items = input_str.split(';')
         for item in dict_items:
-            out_dict[item.split(':')[0]]=(int(item.split(':')[1].split(',')[0]) // global_batch_size),\
-                                            (int(item.split(':')[1].split(',')[1]) // global_batch_size)
+            out_dict[item.split(':')[0]]=(int(item.split(':')[1].split(',')[0]) // global_batch_size + 1),\
+                                            (int(item.split(':')[1].split(',')[1]) // global_batch_size + 1)
     else:
-        out_dict[input_str.split(':')[0]]=(int(input_str.split(':')[1].split(',')[0]) // global_batch_size),\
-                                            (int(input_str.split(':')[1].split(',')[1]) // global_batch_size)
+        out_dict[input_str.split(':')[0]]=(int(input_str.split(':')[1].split(',')[0]) // global_batch_size + 1),\
+                                            (int(input_str.split(':')[1].split(',')[1]) // global_batch_size + 1)
     
     return out_dict
     
@@ -162,33 +162,27 @@ def main():
                 'use_max_pool': {
                     'values':[parse_bool_str(x) for x in args.use_max_pool.split(',')]
                 },
+                'learnable_PE': {
+                    'values':[parse_bool_str(x) for x in args.learnable_PE.split(',')]
+                },
                 'filter_list': {
                     'values': [[int(x) for x in args.filter_list.split(',')]]
                 },
-                #'loss_type': {
-                #    'values':[str(x) for x in args.loss_type.split(',')]
-                #},
                 'heads_channels': {
                     'values':[parse_dict_input(args.heads_channels)]
                 },
-                #'post_BN_dropout_rate': {
-                #    'values': [float(x) for x in args.post_BN_dropout_rate.split(',')]
-                #},
                 'BN_momentum': {
                     'values': [float(x) for x in args.BN_momentum.split(',')]
                 },
                 'optimizer': {
                     'values': [args.optimizer.lower()]
                 },
-                'block_type': {
-                    'values': [x for x in args.block_type.split(',')]
+                'human_fine_tune': {
+                    'values':[parse_bool_str(x) for x in args.human_fine_tune.split(',')]
+                },
+                'fine_tune_epochs': {
+                    'values': [int(args.fine_tune_epochs)]
                 }
-                #'use_enf_conv_block': {
-                #    'values':[parse_bool_str(x) for x in args.use_enf_conv_block.split(',')]
-                #},
-                #'use_LN_only': {
-                #    'values':[parse_bool_str(x) for x in args.use_LN_only.split(',')]
-                #}
             }
     }
 
@@ -239,7 +233,6 @@ def main():
             
             run_name = '_'.join(['E-P-',
                                  str(wandb.config.heads_channels['human']),
-                                 str(wandb.config.block_type),
                                  str(wandb.config.input_length)[:3] + 'k',
                                  'load_init-' + str(wandb.config.load_init),
                                  'freeze-' + str(wandb.config.freeze_conv_layers),
@@ -278,7 +271,7 @@ def main():
             #print(total_train_steps)
             wandb.config.update({"total_steps" : total_train_steps},
                                 allow_val_change=True)
-            wandb.config.update({"val_steps_TSS": args.val_examples_TSS // GLOBAL_BATCH_SIZE},
+            wandb.config.update({"val_steps_TSS": args.val_examples_TSS // GLOBAL_BATCH_SIZE + 1},
                                 allow_val_change=True)
             
 
@@ -301,22 +294,9 @@ def main():
                                                                 options,
                                                                 g)
             
-            iters = []
-            iters.append(tr_data_it_dict['human'])
-            print('append human')
-            if 'mouse' in iterators.keys():
-                print('append mouse')
-                iters.append(tr_data_it_dict['mouse'])
-            if 'rhesus' in iterators.keys():
-                print('append rhesus')
-                iters.append(tr_data_it_dict['rhesus'])
-            if 'rat' in iterators.keys():
-                iters.append(tr_data_it_dict['rat'])
-            if 'canine' in iterators.keys():
-                iters.append(tr_data_it_dict['canine'])
-            iters = tuple(iters)
-            print(iters)
-                
+            #iters = []
+            iters_human=tr_data_it_dict['human']
+            iters_mouse=tr_data_it_dict['mouse']
 
             print('created dataset iterators')
 
@@ -347,8 +327,8 @@ def main():
                                                           freeze_conv_layers=wandb.config.freeze_conv_layers,
                                                           kernel_transformation=wandb.config.kernel_transformation,
                                                           normalize=wandb.config.normalize,
-                                                          block_type=wandb.config.block_type,
                                                           out_length=wandb.config.output_length,
+                                                          learnable_PE=wandb.config.learnable_PE,
                                                           target_length=896)
 
             checkpoint_name = wandb.config.model_save_dir + "/" + \
@@ -435,17 +415,26 @@ def main():
                             training_utils.return_train_val_functions(model,
                                                                       organism_dict['human'][0],
                                                                       organism_dict,
-                                                                              organism_dict['human'][1],
-                                                                              organism_dict['mouse'][1],
+                                                                      organism_dict['human'][1],
+                                                                      organism_dict['mouse'][1],
                                                                       wandb.config.val_steps_TSS,
                                                                       optimizers_in,
                                                                       cage_start_index,
                                                                       strategy,
                                                                       metric_dict,
                                                                       GLOBAL_BATCH_SIZE,
-                                                                      wandb.config.gradient_clip,
-                                                                      BATCH_SIZE_PER_REPLICA,
-                                                                      loss_fn_main='poisson')
+                                                                      wandb.config.gradient_clip)
+            
+            if wandb.config.human_fine_tune:
+                dist_train_step_h = \
+                            training_utils.return_train_val_functions_human(model,
+                                                                          organism_dict['human'][0],
+                                                                          organism_dict,
+                                                                          optimizers_in,
+                                                                          strategy,
+                                                                          metric_dict,
+                                                                          GLOBAL_BATCH_SIZE,
+                                                                          wandb.config.gradient_clip)
             
 
 
@@ -470,14 +459,27 @@ def main():
                 print('starting epoch_', str(epoch_i))
                 start = time.time()
                 
-                dist_train_step(iters)
-                #for organism in organism_dict.keys():
+                
+                if not wandb.config.human_fine_tune:
+                    dist_train_step(iters_human,iters_mouse)
+                else:
+                    if epoch_i < wandb.config.fine_tune_epochs: 
+                        dist_train_step(iters_human,iters_mouse)
+                    else:
+                        print('now fine tuning on human only')
+                        dist_train_step_h(iters_human)
+
                     
                     #train_step_dict[organism](tr_data_it_dict[organism])
                 wandb.log({'human_train_loss': metric_dict['human_tr'].result().numpy()},
                           step=epoch_i)
-                wandb.log({'mouse_train_loss': metric_dict['mouse_tr'].result().numpy()},
-                          step=epoch_i)
+                if not wandb.config.human_fine_tune:
+                    wandb.log({'mouse_train_loss': metric_dict['mouse_tr'].result().numpy()},
+                              step=epoch_i)
+                else:
+                    if epoch_i < wandb.config.fine_tune_epochs: 
+                        wandb.log({'mouse_train_loss': metric_dict['mouse_tr'].result().numpy()},
+                                  step=epoch_i)
 
                 end = time.time()
                 duration = (end - start) / 60.
@@ -488,7 +490,8 @@ def main():
                 
                 start = time.time()
                 val_step_h(val_data_it_dict['human'])
-                val_step_m(val_data_it_dict['mouse'])
+                if epoch_i < wandb.config.fine_tune_epochs: 
+                    val_step_m(val_data_it_dict['mouse'])
                 
                 for organism in ['human','mouse']:
                     if organism == 'human':
@@ -527,41 +530,42 @@ def main():
                                        organism+'_CAGE_R2': np.nanmean(R2[2058:])},
                                       step=epoch_i)
                     if organism == 'mouse':
-                        if wandb.config.heads_channels['mouse'] == 1643:
-                            wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
-                                      step=epoch_i)
-                            pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
+                        if epoch_i < wandb.config.fine_tune_epochs: 
+                            if wandb.config.heads_channels['mouse'] == 1643:
+                                wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
+                                          step=epoch_i)
+                                pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
 
-                            wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
-                                       organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:135]),
-                                       organism+'_CHIP_pearsons': np.nanmean(pearsonsR[135:1019]),
-                                       organism+'_CAGE_pearsons': np.nanmean(pearsonsR[1019:])},
-                                      step=epoch_i)
+                                wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
+                                           organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:135]),
+                                           organism+'_CHIP_pearsons': np.nanmean(pearsonsR[135:1019]),
+                                           organism+'_CAGE_pearsons': np.nanmean(pearsonsR[1019:])},
+                                          step=epoch_i)
 
-                            R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
-                            wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
-                                       organism+'_DNASE_R2': np.nanmean(R2[:135]),
-                                       organism+'_CHIP_R2': np.nanmean(R2[135:1019]),
-                                       organism+'_CAGE_R2': np.nanmean(R2[1019:])},
-                                      step=epoch_i)
-                        else:
-                            wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
-                                      step=epoch_i)
-                            pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
+                                R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
+                                wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
+                                           organism+'_DNASE_R2': np.nanmean(R2[:135]),
+                                           organism+'_CHIP_R2': np.nanmean(R2[135:1019]),
+                                           organism+'_CAGE_R2': np.nanmean(R2[1019:])},
+                                          step=epoch_i)
+                            else:
+                                wandb.log({organism + '_val_loss': metric_dict[organism + '_val'].result().numpy()},
+                                          step=epoch_i)
+                                pearsonsR=metric_dict[organism+'_pearsonsR'].result()['PearsonR'].numpy()
 
-                            wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
-                                       organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:135]),
-                                       organism+'_CHIP_pearsons': np.nanmean(pearsonsR[135:630]),
-                                       organism+'_CAGE_pearsons': np.nanmean(pearsonsR[630:])},
-                                      step=epoch_i)
+                                wandb.log({organism + '_all_tracks_pearsons': np.nanmean(pearsonsR),
+                                           organism+'_DNASE_pearsons': np.nanmean(pearsonsR[:135]),
+                                           organism+'_CHIP_pearsons': np.nanmean(pearsonsR[135:630]),
+                                           organism+'_CAGE_pearsons': np.nanmean(pearsonsR[630:])},
+                                          step=epoch_i)
 
-                            R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
-                            wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
-                                       organism+'_DNASE_R2': np.nanmean(R2[:135]),
-                                       organism+'_CHIP_R2': np.nanmean(R2[135:630]),
-                                       organism+'_CAGE_R2': np.nanmean(R2[630:])},
-                                      step=epoch_i)
-                
+                                R2=metric_dict[organism+'_R2'].result()['R2'].numpy()
+                                wandb.log({organism + '_all_tracks_R2': np.nanmean(R2),
+                                           organism+'_DNASE_R2': np.nanmean(R2[:135]),
+                                           organism+'_CHIP_R2': np.nanmean(R2[135:630]),
+                                           organism+'_CAGE_R2': np.nanmean(R2[630:])},
+                                          step=epoch_i)
+
                 print('human_val_loss: ' + str(metric_dict['human_val'].result().numpy()))
                 val_losses.append(metric_dict['human_val'].result().numpy())
                 
@@ -599,16 +603,6 @@ def main():
                               step=epoch_i)
                 except IndexError:
                     pass
-                
-                
-                #if wandb.config.model_type == 'enformer_performer':
-                fig_gamma,fig_beta,fig_moving_means,fig_moving_vars=\
-                        training_utils.extract_batch_norm_stats(model)
-                wandb.log({'gamma': fig_gamma,
-                           'beta': fig_beta,
-                           'moving_mean': fig_moving_means,
-                           'moving_var': fig_moving_vars},
-                          step=epoch_i)
                 
                 end = time.time()
                 duration = (end - start) / 60.

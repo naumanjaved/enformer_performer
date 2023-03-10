@@ -77,32 +77,28 @@ class crop(kl.Layer):
 
 
 @tf.keras.utils.register_keras_serializable()
-class conv_mix_block(kl.Layer):
+class layer_norm_fp32(kl.Layer):
     def __init__(self,
-                 num_channels_out: int,
-                 stride: int = 1,
-                 name: str = 'conv1d_block_dim_reduce',
+                 epsilon=1e-05,
+                 beta_initializer="zeros",
+                 gamma_initializer="ones",
+                 name: str = 'layer_norm_fp32',
                  **kwargs):
 
         super().__init__(name=name, **kwargs)
-        self.num_channels_out = num_channels_out
-        #self.dropout_rate = dropout_rate
-        self.batch_norm = syncbatchnorm(axis=-1,
-                                        center=True,
-                                        scale=True,
-                                        beta_initializer="zeros",
-                                        gamma_initializer="ones",
-                                        **kwargs)
-        self.gelu = tfa.layers.GELU()
-        self.conv = kl.Conv1D(filters = self.num_channels_out,
-                              kernel_size = 1,
-                              strides=1,
-                              padding='same',
-                              kernel_initializer=tf.keras.initializers.GlorotUniform())
+        self.epsilon=epsilon
+        self.beta_initializer=beta_initializer
+        self.gamma_initializer=gamma_initializer
+        self.layer_norm = kl.LayerNormalization(axis=-1,
+                                                  scale=True,
+                                                  center=True,
+                                                    epsilon=self.epsilon,
+                                                  beta_initializer=self.beta_initializer,
+                                                  gamma_initializer=self.gamma_initializer)
 
     def get_config(self):
         config = {
-            "num_channels_out":self.num_channels_out
+            "epsilon":self.epsilon
         }
         base_config = super().get_config()
         return {**base_config, **config}
@@ -112,12 +108,67 @@ class conv_mix_block(kl.Layer):
         return cls(**config)
     
     def call(self, inputs, training=None):
-        x = self.batch_norm(inputs, training=training) 
-        x = self.gelu(x)
-        x = self.conv(x)
-        return tf.cast(x,
-                       dtype=tf.bfloat16)
+        x = tf.cast(inputs,dtype=tf.float32)
+        x = self.layer_norm(x)
+        return tf.cast(x, dtype=tf.bfloat16)
 
+    
+@tf.keras.utils.register_keras_serializable()
+class sync_batch_norm_fp32(kl.Layer):
+    def __init__(self,
+                 beta_init=None,
+                 gamma_init=None,
+                 mean_init=None,
+                 var_init=None,
+                 epsilon=1e-05,
+                 train=True,
+                 momentum = 0.90,
+                 load_init=True,
+                 name: str = 'sync_batch_norm_fp32',
+                 **kwargs):
+
+        super().__init__(name=name, **kwargs)
+        self.epsilon=epsilon
+        self.load_init=load_init
+        self.beta_init=beta_init
+        self.gamma_init=gamma_init
+        self.mean_init=mean_init
+        self.var_init=var_init
+        self.train=train
+        self.momentum=momentum
+        self.batch_norm = syncbatchnorm(axis=-1,
+                                          center=True,
+                                          scale=True,
+                                          beta_initializer=self.beta_init if self.load_init else "zeros",
+                                          gamma_initializer=self.gamma_init if self.load_init else "ones",
+                                          trainable=self.train,
+                                          momentum=self.momentum,
+                                          epsilon=self.epsilon,
+                                          moving_mean_initializer=self.mean_init if self.load_init else "zeros",
+                                          moving_variance_initializer=self.var_init if self.load_init else "ones",
+                                          **kwargs)
+
+    def get_config(self):
+        config = {
+            "epsilon":self.epsilon,
+            "load_init":self.load_init,
+            "beta_init":self.beta_init,
+            "gamma_init":self.gamma_init,
+            "mean_init":self.mean_init,
+            "var_init":self.var_init
+        }
+        base_config = super().get_config()
+        return {**base_config, **config}
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
+    def call(self, inputs, training=None):
+        x = tf.cast(inputs, dtype=tf.float32)
+        x = self.batch_norm(x,training=training)
+        return tf.cast(x, dtype=tf.bfloat16)
+    
 @tf.keras.utils.register_keras_serializable()
 class FFN(kl.Layer):
     def __init__(self, 
@@ -138,10 +189,7 @@ class FFN(kl.Layer):
         self.ffn_widening = 2
         self.ffn_dropout = dropout_rate
             
-        self.FFN_layer_norm = kl.LayerNormalization(axis=-1,
-                                                  scale=True,
-                                                  center=True,
-                                                    epsilon=1e-05,
+        self.FFN_layer_norm = layer_norm_fp32(epsilon=1e-05,
                                                   beta_initializer="zeros",
                                                   gamma_initializer="ones")
         self.FFN_dense_wide = kl.Dense(self.ffn_channels*self.ffn_widening,
@@ -199,10 +247,7 @@ class FFN_stable(kl.Layer):
         self.ffn_widening = 2
         self.ffn_dropout = dropout_rate
             
-        self.FFN_layer_norm = kl.LayerNormalization(axis=-1,
-                                                  scale=True,
-                                                  center=True,
-                                                    epsilon=1e-05,
+        self.FFN_layer_norm = layer_norm_fp32(epsilon=1e-05,
                                                   beta_initializer="zeros",
                                                   gamma_initializer="ones")
         self.FFN_dense_wide = kl.Dense(self.ffn_channels*self.ffn_widening,
@@ -287,10 +332,7 @@ class Performer(kl.Layer):
         self.seed=seed
         
         
-        self.layer_norm = kl.LayerNormalization(axis=-1,
-                                                  scale=True,
-                                                  center=True,
-                                                epsilon=1e-05,
+        self.layer_norm = layer_norm_fp32(epsilon=1e-05,
                                                   beta_initializer="zeros",
                                                   gamma_initializer="ones")
         self.self_attention = fa_rpe.Attention(hidden_size=self.d_model,
@@ -524,10 +566,7 @@ class Performer_Encoder(kl.Layer):
                                  use_rot_emb=self.use_rot_emb,
                                  **kwargs) for i in range(self.num_layers)]
         
-        self.layer_norm = kl.LayerNormalization(axis=-1,
-                                                  scale=True,
-                                                epsilon=1e-05,
-                                                  center=True,
+        self.layer_norm = layer_norm_fp32(epsilon=1e-05,
                                                   beta_initializer="zeros",
                                                   gamma_initializer="ones")
         
@@ -675,10 +714,7 @@ class Performer_Encoder_stable(kl.Layer):
                                  use_rot_emb=self.use_rot_emb,
                                  **kwargs) for i in range(self.num_layers)]
         
-        self.layer_norm = kl.LayerNormalization(axis=-1,
-                                                  scale=True,
-                                                  center=True,
-                                                epsilon=1e-05,
+        self.layer_norm = layer_norm_fp32(epsilon=1e-05,
                                                   beta_initializer="zeros",
                                                   gamma_initializer="ones")
         

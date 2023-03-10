@@ -36,9 +36,6 @@ from scipy.stats.stats import pearsonr
 from scipy.stats.stats import spearmanr  
 ## custom modules
 import metrics as metrics
-from optimizers import *
-import schedulers as schedulers
-
 from scipy import stats
 
 import enformer_vanilla as enformer
@@ -47,7 +44,7 @@ import pandas as pd
 from scipy.stats.stats import pearsonr, spearmanr
 from scipy.stats import zscore
 
-resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='node-4')
+resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='node-2')
 tf.config.experimental_connect_to_cluster(resolver)
 tf.tpu.experimental.initialize_tpu_system(resolver)
 strategy = tf.distribute.TPUStrategy(resolver)
@@ -116,7 +113,7 @@ def deserialize_val_TSS(serialized_example,input_length,max_shift, out_length,nu
 with strategy.scope():
     
     list_files_val = (tf.io.gfile.glob(os.path.join("gs://genformer_data/expanded_originals/196k/human/tfrecords_tss",
-                                                "tssmask-valid*.tfr")))
+                                                "valid*.tfr")))
     
     files = tf.data.Dataset.list_files(list_files_val)
     dataset_build = tf.data.TFRecordDataset(files,
@@ -152,7 +149,7 @@ with strategy.scope():
     checkpoint_options = tf.train.CheckpointOptions(experimental_io_device="/job:localhost")
     checkpoint = tf.train.Checkpoint(module=model)#,options=options)
     tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
-    latest = tf.train.latest_checkpoint("/home/jupyter/dev/BE_CD69_paper_2022/enformer_fine_tuning/checkpoint/sonnet_weights/")
+    latest = tf.train.latest_checkpoint("gs://picard-testing-176520/sonnet_weights/sonnet_weights")
 
     checkpoint.restore(latest,options=checkpoint_options).assert_consumed()
     
@@ -170,7 +167,7 @@ with strategy.scope():
     cell_types_all = []
 
     list_files_val = (tf.io.gfile.glob(os.path.join("gs://genformer_data/expanded_originals/196k/human/tfrecords_tss",
-                                                "tssmask-valid*.tfr")))
+                                                    "valid*.tfr")))
     
     files = tf.data.Dataset.list_files(list_files_val)
 
@@ -186,7 +183,7 @@ with strategy.scope():
                           deterministic=False,
                           num_parallel_calls=4)
 
-    dataset=dataset.repeat(2).batch(8,drop_remainder=True).prefetch(1)
+    dataset=dataset.repeat(2).batch(8).prefetch(1)
     val_dist= strategy.experimental_distribute_dataset(dataset)
     val_dist_it = iter(val_dist)
 
@@ -218,7 +215,7 @@ with strategy.scope():
         ta_celltype = tf.TensorArray(tf.int32, size=0, dynamic_size=True) # tensor array to store preds
         ta_genemap = tf.TensorArray(tf.int32, size=0, dynamic_size=True)        
 
-        for _ in range(277):
+        for _ in range(267):
             pred_rep, true_rep, gene_rep, cell_type_rep = strategy.run(run_model,
                                                                        args=(next(iterator),))
             pred_reshape = tf.reshape(strategy.gather(pred_rep, axis=0), [-1]) # reshape to 1D
@@ -243,29 +240,10 @@ with strategy.scope():
         
     dist_run_model(val_dist_it)
     
-    results_df = pd.DataFrame()
-    results_df['true'] = hg_corr_stats.result()['y_trues'].numpy()
-    results_df['pred'] = hg_corr_stats.result()['y_preds'].numpy()
-    results_df['gene_encoding']  = hg_corr_stats.result()['gene_map'].numpy()
-    results_df['cell_type_encoding'] = hg_corr_stats.result()['cell_types'].numpy()
-    
+    results_df_raw = pd.DataFrame()
+    results_df_raw['true'] = hg_corr_stats.result()['y_trues'].numpy()
+    results_df_raw['pred'] = hg_corr_stats.result()['y_preds'].numpy()
+    results_df_raw['gene_encoding']  = hg_corr_stats.result()['gene_map'].numpy()
+    results_df_raw['cell_type_encoding'] = hg_corr_stats.result()['cell_types'].numpy()
 
-    results_df=results_df.groupby(['gene_encoding', 'cell_type_encoding']).agg({'true': 'sum', 'pred': 'sum'})
-    results_df['true'] = np.log2(1.0+results_df['true'])
-    results_df['pred'] = np.log2(1.0+results_df['pred'])
-
-    results_df['true_zscore']=results_df.groupby(['cell_type_encoding']).true.transform(lambda x : zscore(x))
-    results_df['pred_zscore']=results_df.groupby(['cell_type_encoding']).pred.transform(lambda x : zscore(x))
-
-    true_zscore=results_df[['true_zscore']].to_numpy()[:,0]
-
-    pred_zscore=results_df[['pred_zscore']].to_numpy()[:,0]
-
-    cell_specific_corrs=results_df.groupby('cell_type_encoding')[['true_zscore','pred_zscore']].corr(method='pearson').unstack().iloc[:,1].tolist()
-
-    results_df.to_csv('gene_level_predictions.tsv',sep='\t',index=False,header=True)
-
-    cell_specific_corrs_arr = np.array(cell_specific_corrs)
-
-    np.savetxt('cell_specific_corrs_arr.out', cell_specific_corrs_arr, delimiter=',')
-        
+    results_df_raw.to_csv('gene_level_predictions.tsv',sep='\t',index=False,header=True)
