@@ -557,7 +557,7 @@ def main():
                                       step=epoch_i)
 
                             R2=metric_dict['mouse_R2'].result()['R2'].numpy()
-                            wandb.log({o'mouse_all_tracks_R2': np.nanmean(R2),
+                            wandb.log({'mouse_all_tracks_R2': np.nanmean(R2),
                                        'mouse_DNASE_R2': np.nanmean(R2[:135]),
                                        'mouse_CHIP_R2': np.nanmean(R2[135:630]),
                                        'mouse_CAGE_R2': np.nanmean(R2[630:])},
